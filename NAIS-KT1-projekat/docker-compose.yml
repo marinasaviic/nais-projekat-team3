@@ -48,15 +48,16 @@ services:
 
   neo4j:
     image: neo4j:5
+    container_name: nais-neo4j
     ports:
       - "7474:7474"
       - "7687:7687"
     environment:
-      NEO4J_AUTH: neo4j/password
-    volumes: # Mounts persistent storage or local folders into the container
-      - neo4j_data:/data
+      NEO4J_AUTH: neo4j/salescrm123
+    volumes:
+      - neo4j_sales_data:/data
     healthcheck:
-      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "password", "RETURN 1"]
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "salescrm123", "RETURN 1"]
       interval: 20s
       timeout: 10s
       retries: 5
@@ -178,5 +179,5 @@ services:
     restart: on-failure
 
 volumes: # Declares named volumes for persistent data storage across container restarts
-  neo4j_data: {}
   ollama_data: {}
+  neo4j_sales_data: {}

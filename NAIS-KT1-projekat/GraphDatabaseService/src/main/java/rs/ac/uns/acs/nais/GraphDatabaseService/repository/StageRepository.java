@@ -1,5 +1,5 @@
 package rs.ac.uns.acs.nais.GraphDatabaseService.repository;
 
-public class CustomerRepository {
+public class StageRepository {
     
 }
