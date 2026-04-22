@@ -30,11 +30,11 @@ services:
       - "9003:9000"
 
 
-  graph-service:
+  sales-process-tracking-service:
     build:
-      context: ./GraphDatabaseService
+      context: ./SalesProcessTrackingService
       dockerfile: Dockerfile
-    image: graph-service:latest
+    image: sales-process-tracking-service:latest
     depends_on:
       eureka-server:
         condition: service_healthy
