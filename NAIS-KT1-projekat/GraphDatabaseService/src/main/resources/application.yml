@@ -1,29 +1,18 @@
 server:
-  port: 9050
+  port: 8080
 
 spring:
-  neo4j:
-    uri: bolt://localhost:7687
-    authentication:
-      username: neo4j
-      password: password
   application:
     name: graph-database-service
-  rabbitmq:
-    host: localhost
-    port: 5672
-    username: guest
-    password: guest
+  neo4j:
+    uri: bolt://neo4j:7687
+    authentication:
+      username: neo4j
+      password: salescrm123
 
 eureka:
   client:
     service-url:
       defaultZone: http://eureka-server:8761/eureka/
-      healthcheck:
-        enabled: true
   instance:
     prefer-ip-address: true
-
-
-
-

@@ -7,24 +7,22 @@ import org.springframework.data.neo4j.core.schema.Relationship;
 import java.util.ArrayList;
 import java.util.List;
 
-@Node("Customer")
-public class Customer {
+@Node("SalesRepresentative")
+public class SalesRepresentative {
 
     @Id
     private String id;
     private String name;
-    private String city;
 
-    @Relationship(type = "HAS_PROCESS", direction = Relationship.Direction.OUTGOING)
-    private List<SalesProcess> processes = new ArrayList<>();
+    @Relationship(type = "MANAGES", direction = Relationship.Direction.OUTGOING)
+    private List<SalesProcess> managedProcesses = new ArrayList<>();
 
-    public Customer() {
+    public SalesRepresentative() {
     }
 
-    public Customer(String id, String name, String city) {
+    public SalesRepresentative(String id, String name) {
         this.id = id;
         this.name = name;
-        this.city = city;
     }
 
     public String getId() {
@@ -43,19 +41,11 @@ public class Customer {
         this.name = name;
     }
 
-    public String getCity() {
-        return city;
+    public List<SalesProcess> getManagedProcesses() {
+        return managedProcesses;
     }
 
-    public void setCity(String city) {
-        this.city = city;
-    }
-
-    public List<SalesProcess> getProcesses() {
-        return processes;
-    }
-
-    public void setProcesses(List<SalesProcess> processes) {
-        this.processes = processes;
+    public void setManagedProcesses(List<SalesProcess> managedProcesses) {
+        this.managedProcesses = managedProcesses;
     }
 }
