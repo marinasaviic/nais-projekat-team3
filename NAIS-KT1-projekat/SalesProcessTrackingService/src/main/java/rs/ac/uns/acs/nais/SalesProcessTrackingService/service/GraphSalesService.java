@@ -174,25 +174,17 @@ public class GraphSalesService {
     }
 
     public Stage connectStageToStage(String fromStageId, String toStageId) {
-        Stage fromStage = getStageById(fromStageId);
-        Stage toStage = getStageById(toStageId);
+        getStageById(fromStageId);
+        getStageById(toStageId);
+        return stageRepository.connectStageToStage(fromStageId, toStageId);
 
-        boolean alreadyExists = fromStage.getNextStages().stream()
-                .anyMatch(stage -> stage.getId().equals(toStageId));
-
-        if (!alreadyExists) {
-            fromStage.getNextStages().add(toStage);
-        }
-
-        return stageRepository.save(fromStage);
     }
 
     public Stage removeStageToStageRelation(String fromStageId, String toStageId) {
-        Stage fromStage = getStageById(fromStageId);
+        getStageById(fromStageId);
+        getStageById(toStageId);
+        return stageRepository.removeStageToStageRelation(fromStageId, toStageId);
 
-        fromStage.getNextStages().removeIf(stage -> stage.getId().equals(toStageId));
-
-        return stageRepository.save(fromStage);
     }
 
     // QUERIES
