@@ -36,15 +36,18 @@ services:
       dockerfile: Dockerfile
     image: graph-service:latest
     depends_on:
-      - eureka-server
-      - neo4j
+      eureka-server:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
       SPRING_NEO4J_URI: bolt://neo4j:7687
       SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
-      SPRING_NEO4J_AUTHENTICATION_PASSWORD: password
+      SPRING_NEO4J_AUTHENTICATION_PASSWORD: salescrm123
     ports:
       - "9060:8080"
+    restart: on-failure
 
   neo4j:
     image: neo4j:5
@@ -61,7 +64,6 @@ services:
       interval: 20s
       timeout: 10s
       retries: 5
-
   etcd:
     container_name: milvus-etcd
     image: quay.io/coreos/etcd:v3.5.25
