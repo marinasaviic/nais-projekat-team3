@@ -49,6 +49,22 @@ services:
       - "9060:8080"
     restart: on-failure
 
+  collaborative-pricelist-service:
+    build:
+      context: ./CollaborativePricelistService
+      dockerfile: Dockerfile
+    image: collaborative-pricelist-service:latest
+    depends_on:
+      neo4j:
+        condition: service_healthy
+    environment:
+      SPRING_NEO4J_URI: bolt://neo4j:7687
+      SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
+      SPRING_NEO4J_AUTHENTICATION_PASSWORD: salescrm123
+    ports:
+      - "9061:8080"
+    restart: on-failure
+
   neo4j:
     image: neo4j:5
     container_name: nais-neo4j
