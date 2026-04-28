@@ -10,12 +10,12 @@ public class Pricelist {
     private String id;
     private String name;
     private String status;
-    private Integer version;
+    private String version;
 
     public Pricelist() {
     }
 
-    public Pricelist(String id, String name, String status, Integer version) {
+    public Pricelist(String id, String name, String status, String version) {
         this.id = id;
         this.name = name;
         this.status = status;
@@ -46,11 +46,11 @@ public class Pricelist {
         this.status = status;
     }
 
-    public Integer getVersion() {
+    public String getVersion() {
         return version;
     }
 
-    public void setVersion(Integer version) {
+    public void setVersion(String version) {
         this.version = version;
     }
 }

@@ -3,7 +3,7 @@ package rs.ac.uns.acs.nais.CollaborativePricelistService.model;
 import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 @Node("ActivityLog")
 public class ActivityLog {
@@ -11,7 +11,7 @@ public class ActivityLog {
     @Id
     private String id;
     private String actionType;
-    private LocalDateTime timestamp;
+    private ZonedDateTime timestamp;
     private Integer durationMinutes;
     private String details;
     private String userId;
@@ -22,7 +22,7 @@ public class ActivityLog {
     public ActivityLog() {
     }
 
-    public ActivityLog(String id, String actionType, LocalDateTime timestamp, Integer durationMinutes, String details,
+    public ActivityLog(String id, String actionType, ZonedDateTime timestamp, Integer durationMinutes, String details,
                        String userId, String teamId, String pricelistId, String regionId) {
         this.id = id;
         this.actionType = actionType;
@@ -51,11 +51,11 @@ public class ActivityLog {
         this.actionType = actionType;
     }
 
-    public LocalDateTime getTimestamp() {
+    public ZonedDateTime getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(LocalDateTime timestamp) {
+    public void setTimestamp(ZonedDateTime timestamp) {
         this.timestamp = timestamp;
     }
 

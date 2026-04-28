@@ -4,7 +4,7 @@ import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 import rs.ac.uns.acs.nais.CollaborativePricelistService.model.Team;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 public interface CollaborationRepository extends Neo4jRepository<Team, String> {
@@ -15,7 +15,7 @@ public interface CollaborationRepository extends Neo4jRepository<Team, String> {
         SET r.role = $role, r.assignedAt = $assignedAt
         RETURN t
     """)
-    Team addUserToTeam(String userId, String teamId, String role, LocalDateTime assignedAt);
+    Team addUserToTeam(String userId, String teamId, String role, ZonedDateTime assignedAt);
 
     @Query("""
         MATCH (:TeamUser {id: $userId})-[r:MEMBER_OF]->(:Team {id: $teamId})
@@ -35,7 +35,7 @@ public interface CollaborationRepository extends Neo4jRepository<Team, String> {
         SET r.ownershipType = $ownershipType, r.assignedAt = $assignedAt
         RETURN t
     """)
-    Team assignTeamToPricelist(String teamId, String pricelistId, String ownershipType, LocalDateTime assignedAt);
+    Team assignTeamToPricelist(String teamId, String pricelistId, String ownershipType, ZonedDateTime assignedAt);
 
     @Query("""
         MATCH (:Team {id: $teamId})-[r:WORKS_ON]->(:Pricelist {id: $pricelistId})
@@ -81,14 +81,14 @@ public interface CollaborationRepository extends Neo4jRepository<Team, String> {
             durationMinutes: $durationMinutes
         }]->(p)
     """)
-    void logUserActionOnPricelist(String userId, String pricelistId, String actionType, LocalDateTime timestamp, Integer durationMinutes);
+    void logUserActionOnPricelist(String userId, String pricelistId, String actionType, ZonedDateTime timestamp, Integer durationMinutes);
 
     @Query("""
         MATCH (:TeamUser {id: $userId})-[a:PERFORMED]->(:Pricelist {id: $pricelistId})
         WHERE a.timestamp = $timestamp
         DELETE a
     """)
-    void deleteUserActionOnPricelist(String userId, String pricelistId, LocalDateTime timestamp);
+    void deleteUserActionOnPricelist(String userId, String pricelistId, ZonedDateTime timestamp);
 
     @Query("""
         MATCH (t:Team)-[:WORKS_ON]->(p:Pricelist)

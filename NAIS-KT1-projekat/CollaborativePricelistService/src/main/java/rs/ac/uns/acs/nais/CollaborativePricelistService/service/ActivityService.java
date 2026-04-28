@@ -5,7 +5,8 @@ import rs.ac.uns.acs.nais.CollaborativePricelistService.model.ActivityLog;
 import rs.ac.uns.acs.nais.CollaborativePricelistService.repository.ActivityLogRepository;
 import rs.ac.uns.acs.nais.CollaborativePricelistService.repository.CollaborationRepository;
 
-import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -38,7 +39,7 @@ public class ActivityService {
      */
     public ActivityLog logUserAction(String userId, String pricelistId, String teamId, 
                                      String actionType, Integer durationMinutes, String details) {
-        LocalDateTime timestamp = LocalDateTime.now();
+        ZonedDateTime timestamp = ZonedDateTime.now(ZoneOffset.UTC);
         
         // Kreiraj ActivityLog zapis
         ActivityLog activityLog = new ActivityLog();
@@ -62,7 +63,7 @@ public class ActivityService {
      * Vraća sve aktivnosti korisnika u zadanom vremenskom periodu.
      */
     public List<ActivityLog> getUserActivities(String userId, Integer daysBack) {
-        LocalDateTime startDate = LocalDateTime.now().minusDays(daysBack);
+        ZonedDateTime startDate = ZonedDateTime.now(ZoneOffset.UTC).minusDays(daysBack);
         return activityLogRepository.findByUserIdAndTimestampAfterOrderByTimestampDesc(userId, startDate);
     }
 
@@ -90,7 +91,7 @@ public class ActivityService {
     /**
      * Vraća sve aktivnosti u zadanom vremenskom periodu.
      */
-    public List<ActivityLog> getActivitiesInPeriod(LocalDateTime startDate, LocalDateTime endDate) {
+    public List<ActivityLog> getActivitiesInPeriod(ZonedDateTime startDate, ZonedDateTime endDate) {
         return activityLogRepository.findByTimestampBetweenOrderByTimestampDesc(startDate, endDate);
     }
 
