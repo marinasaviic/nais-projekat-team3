@@ -38,11 +38,11 @@ services:
     depends_on:
       eureka-server:
         condition: service_healthy
-      neo4j:
+      sales-neo4j:
         condition: service_healthy
-    environment:
+    environment:      
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
-      SPRING_NEO4J_URI: bolt://neo4j:7687
+      SPRING_NEO4J_URI: bolt://sales-neo4j:7687      
       SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
       SPRING_NEO4J_AUTHENTICATION_PASSWORD: salescrm123
     ports:
@@ -55,28 +55,63 @@ services:
       dockerfile: Dockerfile
     image: collaborative-pricelist-service:latest
     depends_on:
-      neo4j:
+      sales-neo4j:
         condition: service_healthy
     environment:
-      SPRING_NEO4J_URI: bolt://neo4j:7687
+      SPRING_NEO4J_URI: bolt://sales-neo4j:7687
       SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
       SPRING_NEO4J_AUTHENTICATION_PASSWORD: salescrm123
     ports:
       - "9061:8080"
     restart: on-failure
 
-  neo4j:
+  product-portfolio-service:
+    build:
+      context: ./ProductPortfolioService
+      dockerfile: Dockerfile
+    image: product-portfolio-service:latest
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      portfolio-neo4j:
+        condition: service_healthy
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      SPRING_NEO4J_URI: bolt://portfolio-neo4j:7687
+      SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
+      SPRING_NEO4J_AUTHENTICATION_PASSWORD: portfolio123
+    ports:
+      - "9070:8080"
+    restart: on-failure
+
+  sales-neo4j:
     image: neo4j:5
-    container_name: nais-neo4j
+    container_name: sales-neo4j
     ports:
       - "7474:7474"
       - "7687:7687"
     environment:
       NEO4J_AUTH: neo4j/salescrm123
     volumes:
-      - neo4j_sales_data:/data
+      - sales_neo4j_data:/data
     healthcheck:
       test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "salescrm123", "RETURN 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+
+  portfolio-neo4j:
+    image: neo4j:5
+    container_name: portfolio-neo4j
+    ports:
+      - "7475:7474"
+      - "7688:7687"
+    environment:
+      NEO4J_AUTH: neo4j/portfolio123
+    volumes:
+      - portfolio_neo4j_data:/data
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "portfolio123", "RETURN 1"]
       interval: 20s
       timeout: 10s
       retries: 5
@@ -198,4 +233,5 @@ services:
 
 volumes: # Declares named volumes for persistent data storage across container restarts
   ollama_data: {}
-  neo4j_sales_data: {}
+  sales_neo4j_data: {}
+  portfolio_neo4j_data: {}
