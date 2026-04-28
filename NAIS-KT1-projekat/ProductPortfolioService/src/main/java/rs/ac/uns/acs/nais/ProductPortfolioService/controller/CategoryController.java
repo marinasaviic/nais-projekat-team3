@@ -1,6 +1,7 @@
 package rs.ac.uns.acs.nais.ProductPortfolioService.controller;
 
 import org.springframework.web.bind.annotation.*;
+import rs.ac.uns.acs.nais.ProductPortfolioService.dto.CategorySummaryDto;
 import rs.ac.uns.acs.nais.ProductPortfolioService.model.Category;
 import rs.ac.uns.acs.nais.ProductPortfolioService.service.ProductPortfolioService;
 
@@ -22,8 +23,8 @@ public class CategoryController {
     }
 
     @GetMapping
-    public List<Category> getAllCategories() {
-        return productPortfolioService.getAllCategories();
+    public List<CategorySummaryDto> getAllCategories() {
+        return productPortfolioService.getAllCategorySummaries();
     }
 
     @GetMapping("/{id}")

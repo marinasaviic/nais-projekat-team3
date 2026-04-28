@@ -1,5 +1,7 @@
 package rs.ac.uns.acs.nais.ProductPortfolioService.model;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
 import org.springframework.data.neo4j.core.schema.Relationship;
@@ -8,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Node("Category")
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class Category {
 
     @Id
