@@ -13,7 +13,7 @@ import rs.ac.uns.acs.nais.CollaborativePricelistService.repository.RegionReposit
 import rs.ac.uns.acs.nais.CollaborativePricelistService.repository.TeamRepository;
 import rs.ac.uns.acs.nais.CollaborativePricelistService.repository.TeamUserRepository;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -183,7 +183,7 @@ public class CollaborationGraphService {
 
     // RELATIONSHIP CRUD
 
-    public Team addUserToTeam(String userId, String teamId, String role, LocalDateTime assignedAt) {
+    public Team addUserToTeam(String userId, String teamId, String role, ZonedDateTime assignedAt) {
         getTeamUserById(userId);
         getTeamById(teamId);
         return collaborationRepository.addUserToTeam(userId, teamId, role, assignedAt);
@@ -199,7 +199,7 @@ public class CollaborationGraphService {
         collaborationRepository.removeUserFromTeam(userId, teamId);
     }
 
-    public Team assignTeamToPricelist(String teamId, String pricelistId, String ownershipType, LocalDateTime assignedAt) {
+    public Team assignTeamToPricelist(String teamId, String pricelistId, String ownershipType, ZonedDateTime assignedAt) {
         getTeamById(teamId);
         getPricelistById(pricelistId);
         return collaborationRepository.assignTeamToPricelist(teamId, pricelistId, ownershipType, assignedAt);
@@ -231,13 +231,13 @@ public class CollaborationGraphService {
         collaborationRepository.disconnectPricelistFromRegion(pricelistId, regionId);
     }
 
-    public void logUserActionOnPricelist(String userId, String pricelistId, String actionType, LocalDateTime timestamp, Integer durationMinutes) {
+    public void logUserActionOnPricelist(String userId, String pricelistId, String actionType, ZonedDateTime timestamp, Integer durationMinutes) {
         getTeamUserById(userId);
         getPricelistById(pricelistId);
         collaborationRepository.logUserActionOnPricelist(userId, pricelistId, actionType, timestamp, durationMinutes);
     }
 
-    public void deleteUserActionOnPricelist(String userId, String pricelistId, LocalDateTime timestamp) {
+    public void deleteUserActionOnPricelist(String userId, String pricelistId, ZonedDateTime timestamp) {
         collaborationRepository.deleteUserActionOnPricelist(userId, pricelistId, timestamp);
     }
 

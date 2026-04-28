@@ -15,7 +15,8 @@ import rs.ac.uns.acs.nais.CollaborativePricelistService.repository.RegionReposit
 import rs.ac.uns.acs.nais.CollaborativePricelistService.repository.TeamRepository;
 import rs.ac.uns.acs.nais.CollaborativePricelistService.repository.TeamUserRepository;
 
-import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 
 @Configuration
 public class DataSeeder {
@@ -53,10 +54,10 @@ public class DataSeeder {
             teamRepository.save(teamB);
             teamRepository.save(teamC);
 
-            Pricelist p1 = new Pricelist("price-1", "Q2 Pharma Pricelist", "ACTIVE", 3);
-            Pricelist p2 = new Pricelist("price-2", "Retail Spring Campaign", "ACTIVE", 5);
-            Pricelist p3 = new Pricelist("price-3", "Wholesale Special Offer", "DRAFT", 2);
-            Pricelist p4 = new Pricelist("price-4", "Regional OTC Updates", "ACTIVE", 4);
+            Pricelist p1 = new Pricelist("price-1", "Q2 Pharma Pricelist", "ACTIVE", "3");
+            Pricelist p2 = new Pricelist("price-2", "Retail Spring Campaign", "ACTIVE", "5");
+            Pricelist p3 = new Pricelist("price-3", "Wholesale Special Offer", "DRAFT", "2");
+            Pricelist p4 = new Pricelist("price-4", "Regional OTC Updates", "ACTIVE", "4");
 
             pricelistRepository.save(p1);
             pricelistRepository.save(p2);
@@ -71,31 +72,31 @@ public class DataSeeder {
             regionRepository.save(r2);
             regionRepository.save(r3);
 
-            collaborationRepository.addUserToTeam("user-1", "team-1", "OWNER", LocalDateTime.now().minusDays(20));
-            collaborationRepository.addUserToTeam("user-2", "team-1", "CONTRIBUTOR", LocalDateTime.now().minusDays(18));
-            collaborationRepository.addUserToTeam("user-2", "team-2", "ANALYST", LocalDateTime.now().minusDays(15));
-            collaborationRepository.addUserToTeam("user-3", "team-2", "OWNER", LocalDateTime.now().minusDays(10));
-            collaborationRepository.addUserToTeam("user-4", "team-3", "OWNER", LocalDateTime.now().minusDays(8));
+            collaborationRepository.addUserToTeam("user-1", "team-1", "OWNER", ZonedDateTime.now(ZoneOffset.UTC).minusDays(20));
+            collaborationRepository.addUserToTeam("user-2", "team-1", "CONTRIBUTOR", ZonedDateTime.now(ZoneOffset.UTC).minusDays(18));
+            collaborationRepository.addUserToTeam("user-2", "team-2", "ANALYST", ZonedDateTime.now(ZoneOffset.UTC).minusDays(15));
+            collaborationRepository.addUserToTeam("user-3", "team-2", "OWNER", ZonedDateTime.now(ZoneOffset.UTC).minusDays(10));
+            collaborationRepository.addUserToTeam("user-4", "team-3", "OWNER", ZonedDateTime.now(ZoneOffset.UTC).minusDays(8));
 
-            collaborationRepository.assignTeamToPricelist("team-1", "price-1", "PRIMARY", LocalDateTime.now().minusDays(12));
-            collaborationRepository.assignTeamToPricelist("team-1", "price-4", "SECONDARY", LocalDateTime.now().minusDays(7));
-            collaborationRepository.assignTeamToPricelist("team-2", "price-2", "PRIMARY", LocalDateTime.now().minusDays(9));
-            collaborationRepository.assignTeamToPricelist("team-2", "price-3", "SECONDARY", LocalDateTime.now().minusDays(6));
+            collaborationRepository.assignTeamToPricelist("team-1", "price-1", "PRIMARY", ZonedDateTime.now(ZoneOffset.UTC).minusDays(12));
+            collaborationRepository.assignTeamToPricelist("team-1", "price-4", "SECONDARY", ZonedDateTime.now(ZoneOffset.UTC).minusDays(7));
+            collaborationRepository.assignTeamToPricelist("team-2", "price-2", "PRIMARY", ZonedDateTime.now(ZoneOffset.UTC).minusDays(9));
+            collaborationRepository.assignTeamToPricelist("team-2", "price-3", "SECONDARY", ZonedDateTime.now(ZoneOffset.UTC).minusDays(6));
 
             collaborationRepository.connectPricelistToRegion("price-1", "region-1", "HIGH");
             collaborationRepository.connectPricelistToRegion("price-2", "region-2", "HIGH");
             collaborationRepository.connectPricelistToRegion("price-3", "region-3", "MEDIUM");
             collaborationRepository.connectPricelistToRegion("price-4", "region-1", "LOW");
 
-            collaborationRepository.logUserActionOnPricelist("user-1", "price-1", "CREATE", LocalDateTime.now().minusDays(11), 45);
-            collaborationRepository.logUserActionOnPricelist("user-2", "price-1", "UPDATE", LocalDateTime.now().minusDays(6), 30);
-            collaborationRepository.logUserActionOnPricelist("user-2", "price-2", "UPDATE", LocalDateTime.now().minusDays(4), 50);
-            collaborationRepository.logUserActionOnPricelist("user-3", "price-2", "CREATE", LocalDateTime.now().minusDays(9), 60);
-            collaborationRepository.logUserActionOnPricelist("user-4", "price-4", "UPDATE", LocalDateTime.now().minusDays(2), 35);
-            collaborationRepository.logUserActionOnPricelist("user-1", "price-4", "UPDATE", LocalDateTime.now().minusHours(20), 25);
+            collaborationRepository.logUserActionOnPricelist("user-1", "price-1", "CREATE", ZonedDateTime.now(ZoneOffset.UTC).minusDays(11), 45);
+            collaborationRepository.logUserActionOnPricelist("user-2", "price-1", "UPDATE", ZonedDateTime.now(ZoneOffset.UTC).minusDays(6), 30);
+            collaborationRepository.logUserActionOnPricelist("user-2", "price-2", "UPDATE", ZonedDateTime.now(ZoneOffset.UTC).minusDays(4), 50);
+            collaborationRepository.logUserActionOnPricelist("user-3", "price-2", "CREATE", ZonedDateTime.now(ZoneOffset.UTC).minusDays(9), 60);
+            collaborationRepository.logUserActionOnPricelist("user-4", "price-4", "UPDATE", ZonedDateTime.now(ZoneOffset.UTC).minusDays(2), 35);
+            collaborationRepository.logUserActionOnPricelist("user-1", "price-4", "UPDATE", ZonedDateTime.now(ZoneOffset.UTC).minusHours(20), 25);
 
             activityLogRepository.save(new ActivityLog(
-                    "activity-1", "CREATE", LocalDateTime.now().minusDays(11), 45,
+                    "activity-1", "CREATE", ZonedDateTime.now(ZoneOffset.UTC).minusDays(11), 45,
                     "Initial creation of Q2 pricelist", "user-1", "team-1", "price-1", "region-1"
             ));
             
@@ -105,73 +106,73 @@ public class DataSeeder {
             // Raznovrsne aktivnosti sa različitim tipima, vremenima i trajanjima
             
             activityLogRepository.save(new ActivityLog(
-                    "activity-2", "UPDATE", LocalDateTime.now().minusDays(6), 30,
+                    "activity-2", "UPDATE", ZonedDateTime.now(ZoneOffset.UTC).minusDays(6), 30,
                     "Updated pricing strategy for Q2", "user-2", "team-1", "price-1", "region-1"
             ));
             
             activityLogRepository.save(new ActivityLog(
-                    "activity-3", "PUBLISH", LocalDateTime.now().minusDays(5), 15,
+                    "activity-3", "PUBLISH", ZonedDateTime.now(ZoneOffset.UTC).minusDays(5), 15,
                     "Published Q2 pricelist to production", "user-1", "team-1", "price-1", "region-1"
             ));
             
             activityLogRepository.save(new ActivityLog(
-                    "activity-4", "CREATE", LocalDateTime.now().minusDays(9), 60,
+                    "activity-4", "CREATE", ZonedDateTime.now(ZoneOffset.UTC).minusDays(9), 60,
                     "Created retail spring campaign pricelist", "user-3", "team-2", "price-2", "region-2"
             ));
             
             activityLogRepository.save(new ActivityLog(
-                    "activity-5", "UPDATE", LocalDateTime.now().minusDays(4), 50,
+                    "activity-5", "UPDATE", ZonedDateTime.now(ZoneOffset.UTC).minusDays(4), 50,
                     "Changed discount coefficients for retail", "user-2", "team-2", "price-2", "region-2"
             ));
             
             activityLogRepository.save(new ActivityLog(
-                    "activity-6", "DELETE", LocalDateTime.now().minusDays(3), 20,
+                    "activity-6", "DELETE", ZonedDateTime.now(ZoneOffset.UTC).minusDays(3), 20,
                     "Removed obsolete price tiers", "user-3", "team-2", "price-2", "region-2"
             ));
             
             activityLogRepository.save(new ActivityLog(
-                    "activity-7", "ARCHIVE", LocalDateTime.now().minusDays(2), 10,
+                    "activity-7", "ARCHIVE", ZonedDateTime.now(ZoneOffset.UTC).minusDays(2), 10,
                     "Archived previous version of pricelist", "user-4", "team-3", "price-4", "region-1"
             ));
             
             activityLogRepository.save(new ActivityLog(
-                    "activity-8", "UPDATE", LocalDateTime.now().minusHours(20), 25,
+                    "activity-8", "UPDATE", ZonedDateTime.now(ZoneOffset.UTC).minusHours(20), 25,
                     "Regional correction for OTC segment", "user-1", "team-1", "price-4", "region-1"
             ));
             
             activityLogRepository.save(new ActivityLog(
-                    "activity-9", "ACTIVATE", LocalDateTime.now().minusHours(18), 5,
+                    "activity-9", "ACTIVATE", ZonedDateTime.now(ZoneOffset.UTC).minusHours(18), 5,
                     "Activated Q2 pharma pricelist in system", "user-2", "team-1", "price-1", "region-1"
             ));
             
             activityLogRepository.save(new ActivityLog(
-                    "activity-10", "REVIEW", LocalDateTime.now().minusHours(12), 40,
+                    "activity-10", "REVIEW", ZonedDateTime.now(ZoneOffset.UTC).minusHours(12), 40,
                     "Reviewed and analyzed competitive pricing", "user-3", "team-2", "price-2", "region-2"
             ));
             
             activityLogRepository.save(new ActivityLog(
-                    "activity-11", "UPDATE", LocalDateTime.now().minusHours(8), 35,
+                    "activity-11", "UPDATE", ZonedDateTime.now(ZoneOffset.UTC).minusHours(8), 35,
                     "Fine-tuned margin coefficients based on analysis", "user-1", "team-1", "price-1", "region-1"
             ));
             
             activityLogRepository.save(new ActivityLog(
-                    "activity-12", "APPROVE", LocalDateTime.now().minusHours(4), 15,
+                    "activity-12", "APPROVE", ZonedDateTime.now(ZoneOffset.UTC).minusHours(4), 15,
                     "Approved all pending price changes", "user-4", "team-3", "price-4", "region-1"
             ));
             
             // Dodatne aktivnosti za boljí analytics
             activityLogRepository.save(new ActivityLog(
-                    "activity-13", "CREATE", LocalDateTime.now().minusDays(7), 55,
+                    "activity-13", "CREATE", ZonedDateTime.now(ZoneOffset.UTC).minusDays(7), 55,
                     "Created new wholesale special offer", "user-2", "team-2", "price-3", "region-3"
             ));
             
             activityLogRepository.save(new ActivityLog(
-                    "activity-14", "UPDATE", LocalDateTime.now().minusDays(5), 45,
+                    "activity-14", "UPDATE", ZonedDateTime.now(ZoneOffset.UTC).minusDays(5), 45,
                     "Updated promotion conditions", "user-3", "team-2", "price-3", "region-3"
             ));
             
             activityLogRepository.save(new ActivityLog(
-                    "activity-15", "DELETE", LocalDateTime.now().minusDays(1), 20,
+                    "activity-15", "DELETE", ZonedDateTime.now(ZoneOffset.UTC).minusDays(1), 20,
                     "Removed expired promotional prices", "user-1", "team-1", "price-4", "region-1"
             ));
         };

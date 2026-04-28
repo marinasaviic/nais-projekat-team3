@@ -6,7 +6,7 @@ import rs.ac.uns.acs.nais.CollaborativePricelistService.model.ActivityLog;
 import rs.ac.uns.acs.nais.CollaborativePricelistService.service.ActivityService;
 import rs.ac.uns.acs.nais.CollaborativePricelistService.service.CollaborationGraphService;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 /**
@@ -150,8 +150,8 @@ public class ActivityTrackingController {
      */
     @GetMapping("/period")
     public List<ActivityLog> getActivitiesInPeriod(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime start,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end
     ) {
         return activityService.getActivitiesInPeriod(start, end);
     }

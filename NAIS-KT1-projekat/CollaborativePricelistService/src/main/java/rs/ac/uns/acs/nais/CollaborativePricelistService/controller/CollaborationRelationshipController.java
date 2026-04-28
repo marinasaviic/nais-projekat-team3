@@ -12,7 +12,7 @@ import rs.ac.uns.acs.nais.CollaborativePricelistService.model.Pricelist;
 import rs.ac.uns.acs.nais.CollaborativePricelistService.model.Team;
 import rs.ac.uns.acs.nais.CollaborativePricelistService.service.CollaborationGraphService;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 @RestController
 @RequestMapping("/api/relationships")
@@ -29,7 +29,7 @@ public class CollaborationRelationshipController {
             @PathVariable String userId,
             @PathVariable String teamId,
             @RequestParam String role,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime assignedAt
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime assignedAt
     ) {
         return collaborationGraphService.addUserToTeam(userId, teamId, role, assignedAt);
     }
@@ -53,7 +53,7 @@ public class CollaborationRelationshipController {
             @PathVariable String teamId,
             @PathVariable String pricelistId,
             @RequestParam String ownershipType,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime assignedAt
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime assignedAt
     ) {
         return collaborationGraphService.assignTeamToPricelist(teamId, pricelistId, ownershipType, assignedAt);
     }
@@ -100,7 +100,7 @@ public class CollaborationRelationshipController {
             @PathVariable String userId,
             @PathVariable String pricelistId,
             @RequestParam String actionType,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime timestamp,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime timestamp,
             @RequestParam Integer durationMinutes
     ) {
         collaborationGraphService.logUserActionOnPricelist(userId, pricelistId, actionType, timestamp, durationMinutes);
@@ -110,7 +110,7 @@ public class CollaborationRelationshipController {
     public void deleteUserActionOnPricelist(
             @PathVariable String userId,
             @PathVariable String pricelistId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime timestamp
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime timestamp
     ) {
         collaborationGraphService.deleteUserActionOnPricelist(userId, pricelistId, timestamp);
     }
