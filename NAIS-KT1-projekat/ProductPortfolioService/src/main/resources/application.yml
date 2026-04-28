@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: sales-process-tracking-service
+    name: product-portfolio-service
   neo4j:
     uri: bolt://neo4j:7687
     authentication:
