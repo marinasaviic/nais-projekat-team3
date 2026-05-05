@@ -1,11 +1,14 @@
 package rs.ac.uns.acs.nais.ProductPortfolioService.service;
 
 import org.springframework.stereotype.Service;
+import rs.ac.uns.acs.nais.ProductPortfolioService.dto.CategorySummaryDto;
+import rs.ac.uns.acs.nais.ProductPortfolioService.dto.ProductSummaryDto;
 import rs.ac.uns.acs.nais.ProductPortfolioService.model.*;
 import rs.ac.uns.acs.nais.ProductPortfolioService.repository.*;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductPortfolioService {
@@ -40,6 +43,20 @@ public class ProductPortfolioService {
         return productRepository.findAll();
     }
 
+    public List<ProductSummaryDto> getAllProductSummaries() {
+        return productRepository.findAll().stream()
+                .map(product -> new ProductSummaryDto(
+                        product.getId(),
+                        product.getName(),
+                        product.getCode(),
+                        product.getCategory() != null ? product.getCategory().getId() : null,
+                        product.getCategory() != null ? product.getCategory().getName() : null,
+                        product.getLifecycleStatus() != null ? product.getLifecycleStatus().getId() : null,
+                        product.getLifecycleStatus() != null ? product.getLifecycleStatus().getName() : null
+                ))
+                .collect(Collectors.toList());
+    }
+
     public Product getProductById(String id) {
         return productRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Product not found with id: " + id));
@@ -64,6 +81,21 @@ public class ProductPortfolioService {
 
     public List<Category> getAllCategories() {
         return categoryRepository.findAll();
+    }
+
+    public List<CategorySummaryDto> getAllCategorySummaries() {
+        return categoryRepository.findAll().stream()
+                .map(category -> new CategorySummaryDto(
+                        category.getId(),
+                        category.getName(),
+                        category.getLevel(),
+                        category.getParentCategory() != null ? category.getParentCategory().getId() : null,
+                        category.getParentCategory() != null ? category.getParentCategory().getName() : null,
+                        category.getSubcategories().stream()
+                                .map(Category::getId)
+                                .collect(Collectors.toList())
+                ))
+                .collect(Collectors.toList());
     }
 
     public Category getCategoryById(String id) {
