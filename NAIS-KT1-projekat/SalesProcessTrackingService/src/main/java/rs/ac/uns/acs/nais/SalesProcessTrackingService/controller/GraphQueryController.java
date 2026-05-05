@@ -39,4 +39,24 @@ public class GraphQueryController {
     public List<String> countProcessesByStatusAndStage() {
         return graphSalesService.countProcessesByStatusAndStage();
     }
+
+    @GetMapping("/active-processes-details")
+    public List<String> findActiveProcessesWithCustomerRepresentativeAndStage() {
+        return graphSalesService.findActiveProcessesWithCustomerRepresentativeAndStage();
+    }
+
+    @GetMapping("/process-count-by-representative-city-stage")
+    public List<String> countProcessesByRepresentativeCityAndStage() {
+        return graphSalesService.countProcessesByRepresentativeCityAndStage();
+    }
+
+    @GetMapping("/stage-paths-from-qualification")
+    public List<String> findStagePathsFromQualification() {
+        return graphSalesService.findStagePathsFromQualification();
+    }
+
+    @GetMapping("/important-sales-stages")
+    public List<String> findProcessesInImportantSalesStages() {
+        return graphSalesService.findProcessesInImportantSalesStages();
+    }
 }
