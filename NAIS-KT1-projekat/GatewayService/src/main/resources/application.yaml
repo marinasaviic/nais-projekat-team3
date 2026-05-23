@@ -28,5 +28,11 @@ spring:
             - Path=/vector-database-service/**
           filters:
             - StripPrefix=1
+        - id: collaborative-pricelist-service
+          uri: lb://collaborative-pricelist-service
+          predicates:
+            - Path=/collaborative-pricelist-service/**
+          filters:
+            - StripPrefix=1
         
 
