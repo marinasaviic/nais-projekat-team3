@@ -89,4 +89,49 @@ public interface SalesProcessRepository extends Neo4jRepository<SalesProcess, St
         ORDER BY total DESC
     """)
     List<String> countProcessesByStatusAndStage();
+
+    @Query("""
+        MATCH (sr:SalesRepresentative)-[:MANAGES]->(sp:SalesProcess)<-[:HAS_PROCESS]-(c:Customer),
+            (sp)-[:CURRENT_STAGE]->(stage:Stage)
+        WHERE sp.status = 'ACTIVE'
+        RETURN sr.name + ' vodi proces ' + sp.title
+            + ' za kupca ' + c.name
+            + ' iz grada ' + c.city
+            + ', trenutna faza je ' + stage.name
+        ORDER BY sr.name, c.city
+        LIMIT 30
+    """)
+    List<String> findActiveProcessesWithCustomerRepresentativeAndStage();
+
+    @Query("""
+        MATCH (sr:SalesRepresentative)-[:MANAGES]->(sp:SalesProcess)<-[:HAS_PROCESS]-(c:Customer),
+            (sp)-[:CURRENT_STAGE]->(stage:Stage)
+        WITH sr.name AS representative, c.city AS city, stage.name AS stageName, COUNT(sp) AS total
+        RETURN representative + ' | grad: ' + city
+            + ' | faza: ' + stageName
+            + ' | broj procesa: ' + toString(total)
+        ORDER BY total DESC
+        LIMIT 30
+    """)
+    List<String> countProcessesByRepresentativeCityAndStage();
+
+    @Query("""
+        MATCH path = (start:Stage)-[:ALLOWED_TO*1..3]->(end:Stage)
+        WHERE start.name = 'Lead Qualification'
+        RETURN start.name + ' -> ' + end.name
+            + ' | broj koraka: ' + toString(length(path))
+        ORDER BY length(path)
+    """)
+    List<String> findStagePathsFromQualification();
+
+    @Query("""
+        MATCH (c:Customer)-[:HAS_PROCESS]->(sp:SalesProcess)-[:CURRENT_STAGE]->(stage:Stage)
+        WHERE stage.name = 'Negotiation' OR stage.name = 'Offer Sent'
+        RETURN c.name + ' | proces: ' + sp.title
+            + ' | status: ' + sp.status
+            + ' | faza: ' + stage.name
+        ORDER BY c.name
+        LIMIT 30
+    """)
+    List<String> findProcessesInImportantSalesStages();
 }

@@ -140,6 +140,59 @@ public class DataSeeder {
             productVariantRepository.connectVariantToMarket("variant-3", "market-3");
             productVariantRepository.connectVariantToMarket("variant-4", "market-2");
             productVariantRepository.connectVariantToMarket("variant-5", "market-3");
+
+                        // Keep the hand-crafted sample data, then generate enough entities to reach exactly 1000.
+                        final int targetEntityCount = 1000;
+                        final int baseEntityCount = 4 + 3 + 3 + 4 + 5;
+                        final int entitiesToGenerate = targetEntityCount - baseEntityCount;
+
+                        int generatedProductCount = entitiesToGenerate / 2;
+                        boolean needsExtraVariant = entitiesToGenerate % 2 != 0;
+
+                        String[] categoryIds = {"category-2", "category-3", "category-4"};
+                        String[] statusIds = {"status-1", "status-2", "status-3"};
+                        String[] marketIds = {"market-1", "market-2", "market-3"};
+
+                        for (int i = 1; i <= generatedProductCount; i++) {
+                                String productId = "product-gen-" + i;
+                                String variantId = "variant-gen-" + i;
+
+                                Product generatedProduct = new Product(
+                                                productId,
+                                                "Generated Product " + i,
+                                                "GEN-" + String.format("%04d", i)
+                                );
+
+                                ProductVariant generatedVariant = new ProductVariant(
+                                                variantId,
+                                                "Generated Variant " + i,
+                                                (10 + (i % 90)) + "mg",
+                                                (10 + (i % 40)) + " units",
+                                                (i % 2 == 0) ? "tablet" : "capsule"
+                                );
+
+                                productRepository.save(generatedProduct);
+                                productVariantRepository.save(generatedVariant);
+
+                                productRepository.connectProductToCategory(productId, categoryIds[(i - 1) % categoryIds.length]);
+                                productRepository.connectProductToStatus(productId, statusIds[(i - 1) % statusIds.length]);
+                                productRepository.connectProductToVariant(productId, variantId);
+                                productVariantRepository.connectVariantToMarket(variantId, marketIds[(i - 1) % marketIds.length]);
+                        }
+
+                        if (needsExtraVariant) {
+                                ProductVariant extraVariant = new ProductVariant(
+                                                "variant-gen-extra-1",
+                                                "Generated Extra Variant 1",
+                                                "25mg",
+                                                "15 units",
+                                                "tablet"
+                                );
+
+                                productVariantRepository.save(extraVariant);
+                                productRepository.connectProductToVariant("product-1", "variant-gen-extra-1");
+                                productVariantRepository.connectVariantToMarket("variant-gen-extra-1", "market-1");
+                        }
         };
     }
 }
