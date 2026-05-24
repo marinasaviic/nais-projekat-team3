@@ -13,9 +13,8 @@ public interface CollaborationRepository extends Neo4jRepository<Team, String> {
         MATCH (u:TeamUser {id: $userId}), (t:Team {id: $teamId})
         MERGE (u)-[r:MEMBER_OF]->(t)
         SET r.role = $role, r.assignedAt = $assignedAt
-        RETURN t
     """)
-    Team addUserToTeam(String userId, String teamId, String role, ZonedDateTime assignedAt);
+    void addUserToTeam(String userId, String teamId, String role, ZonedDateTime assignedAt);
 
     @Query("""
         MATCH (:TeamUser {id: $userId})-[r:MEMBER_OF]->(:Team {id: $teamId})
@@ -33,9 +32,8 @@ public interface CollaborationRepository extends Neo4jRepository<Team, String> {
         MATCH (t:Team {id: $teamId}), (p:Pricelist {id: $pricelistId})
         MERGE (t)-[r:WORKS_ON]->(p)
         SET r.ownershipType = $ownershipType, r.assignedAt = $assignedAt
-        RETURN t
     """)
-    Team assignTeamToPricelist(String teamId, String pricelistId, String ownershipType, ZonedDateTime assignedAt);
+    void assignTeamToPricelist(String teamId, String pricelistId, String ownershipType, ZonedDateTime assignedAt);
 
     @Query("""
         MATCH (:Team {id: $teamId})-[r:WORKS_ON]->(:Pricelist {id: $pricelistId})
@@ -53,9 +51,8 @@ public interface CollaborationRepository extends Neo4jRepository<Team, String> {
         MATCH (p:Pricelist {id: $pricelistId}), (r:Region {id: $regionId})
         MERGE (p)-[fr:FOR_REGION]->(r)
         SET fr.coverageLevel = $coverageLevel
-        RETURN p
     """)
-    rs.ac.uns.acs.nais.CollaborativePricelistService.model.Pricelist connectPricelistToRegion(
+    void connectPricelistToRegion(
             String pricelistId,
             String regionId,
             String coverageLevel

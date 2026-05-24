@@ -4,9 +4,12 @@ server:
 spring:
   application:
     name: gateway-api
-
   cloud:
     gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
       routes:
         - id: sales-process-tracking-service
           uri: lb://sales-process-tracking-service

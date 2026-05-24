@@ -186,7 +186,8 @@ public class CollaborationGraphService {
     public Team addUserToTeam(String userId, String teamId, String role, ZonedDateTime assignedAt) {
         getTeamUserById(userId);
         getTeamById(teamId);
-        return collaborationRepository.addUserToTeam(userId, teamId, role, assignedAt);
+        collaborationRepository.addUserToTeam(userId, teamId, role, assignedAt);
+        return getTeamById(teamId);
     }
 
     public void updateUserTeamRole(String userId, String teamId, String newRole) {
@@ -202,7 +203,8 @@ public class CollaborationGraphService {
     public Team assignTeamToPricelist(String teamId, String pricelistId, String ownershipType, ZonedDateTime assignedAt) {
         getTeamById(teamId);
         getPricelistById(pricelistId);
-        return collaborationRepository.assignTeamToPricelist(teamId, pricelistId, ownershipType, assignedAt);
+        collaborationRepository.assignTeamToPricelist(teamId, pricelistId, ownershipType, assignedAt);
+        return getTeamById(teamId);
     }
 
     public void updateTeamPricelistOwnership(String teamId, String pricelistId, String newOwnershipType) {
@@ -218,7 +220,8 @@ public class CollaborationGraphService {
     public Pricelist connectPricelistToRegion(String pricelistId, String regionId, String coverageLevel) {
         getPricelistById(pricelistId);
         getRegionById(regionId);
-        return collaborationRepository.connectPricelistToRegion(pricelistId, regionId, coverageLevel);
+        collaborationRepository.connectPricelistToRegion(pricelistId, regionId, coverageLevel);
+        return getPricelistById(pricelistId);
     }
 
     public void updatePricelistRegionCoverage(String pricelistId, String regionId, String newCoverageLevel) {

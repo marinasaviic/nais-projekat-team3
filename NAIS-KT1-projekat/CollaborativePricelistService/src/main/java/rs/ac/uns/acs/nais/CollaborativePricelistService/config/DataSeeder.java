@@ -3,6 +3,7 @@ package rs.ac.uns.acs.nais.CollaborativePricelistService.config;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.neo4j.core.Neo4jClient;
 import rs.ac.uns.acs.nais.CollaborativePricelistService.model.ActivityLog;
 import rs.ac.uns.acs.nais.CollaborativePricelistService.model.Pricelist;
 import rs.ac.uns.acs.nais.CollaborativePricelistService.model.Region;
@@ -15,14 +16,24 @@ import rs.ac.uns.acs.nais.CollaborativePricelistService.repository.RegionReposit
 import rs.ac.uns.acs.nais.CollaborativePricelistService.repository.TeamRepository;
 import rs.ac.uns.acs.nais.CollaborativePricelistService.repository.TeamUserRepository;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 
 @Configuration
 public class DataSeeder {
 
+        private static final int ENTITY_COUNT = 1000;
+        private static final List<String> USER_POSITIONS = List.of("OWNER", "ANALYST", "SALES_MANAGER", "CONTRIBUTOR");
+        private static final List<String> TEAM_TYPES = List.of("REGIONAL", "SEGMENT", "CAMPAIGN");
+        private static final List<String> PRICELIST_STATUSES = List.of("ACTIVE", "DRAFT", "ARCHIVED");
+        private static final List<String> ACTION_TYPES = List.of("CREATE", "UPDATE", "PUBLISH", "DELETE", "ARCHIVE", "REVIEW", "APPROVE", "ACTIVATE");
+        private static final List<String> COVERAGE_LEVELS = List.of("LOW", "MEDIUM", "HIGH");
+
     @Bean
     CommandLineRunner seedData(
+            Neo4jClient neo4jClient,
             TeamUserRepository teamUserRepository,
             TeamRepository teamRepository,
             PricelistRepository pricelistRepository,
@@ -31,150 +42,82 @@ public class DataSeeder {
             CollaborationRepository collaborationRepository
     ) {
         return args -> {
-            if (teamUserRepository.count() > 0 || teamRepository.count() > 0 || pricelistRepository.count() > 0
-                    || regionRepository.count() > 0 || activityLogRepository.count() > 0) {
-                return;
+                        neo4jClient.query("MATCH (n) DETACH DELETE n").run();
+
+            List<TeamUser> teamUsers = new ArrayList<>(ENTITY_COUNT);
+            List<Team> teams = new ArrayList<>(ENTITY_COUNT);
+            List<Pricelist> pricelists = new ArrayList<>(ENTITY_COUNT);
+            List<Region> regions = new ArrayList<>(ENTITY_COUNT);
+
+            for (int index = 1; index <= ENTITY_COUNT; index++) {
+                TeamUser teamUser = new TeamUser(
+                        "user-" + index,
+                        "Team User " + index,
+                        "user" + index + "@company.com",
+                        USER_POSITIONS.get((index - 1) % USER_POSITIONS.size())
+                );
+                teamUsers.add(teamUser);
+
+                Team team = new Team(
+                        "team-" + index,
+                        "Pricing Team " + index,
+                        TEAM_TYPES.get((index - 1) % TEAM_TYPES.size())
+                );
+                teams.add(team);
+
+                Pricelist pricelist = new Pricelist(
+                        "price-" + index,
+                        "Pricelist " + index,
+                        PRICELIST_STATUSES.get((index - 1) % PRICELIST_STATUSES.size()),
+                        String.valueOf((index - 1) % 9 + 1)
+                );
+                pricelists.add(pricelist);
+
+                Region region = new Region(
+                        "region-" + index,
+                        "Region " + index,
+                        index % 2 == 0 ? "Serbia" : "Balkan"
+                );
+                regions.add(region);
             }
 
-            TeamUser user1 = new TeamUser("user-1", "Ana Markovic", "ana@company.com", "OWNER");
-            TeamUser user2 = new TeamUser("user-2", "Marko Ilic", "marko@company.com", "ANALYST");
-            TeamUser user3 = new TeamUser("user-3", "Jelena Kovac", "jelena@company.com", "SALES_MANAGER");
-            TeamUser user4 = new TeamUser("user-4", "Nikola Petrov", "nikola@company.com", "OWNER");
+            teamUserRepository.saveAll(teamUsers);
+            teamRepository.saveAll(teams);
+            pricelistRepository.saveAll(pricelists);
+            regionRepository.saveAll(regions);
 
-            teamUserRepository.save(user1);
-            teamUserRepository.save(user2);
-            teamUserRepository.save(user3);
-            teamUserRepository.save(user4);
+            ZonedDateTime baseTime = ZonedDateTime.now(ZoneOffset.UTC);
 
-            Team teamA = new Team("team-1", "North Pricing Team", "REGIONAL");
-            Team teamB = new Team("team-2", "Enterprise Pricing Team", "SEGMENT");
-            Team teamC = new Team("team-3", "Promo Optimization Team", "CAMPAIGN");
+            for (int index = 1; index <= ENTITY_COUNT; index++) {
+                String userId = "user-" + index;
+                String teamId = "team-" + index;
+                String pricelistId = "price-" + index;
+                String regionId = "region-" + index;
 
-            teamRepository.save(teamA);
-            teamRepository.save(teamB);
-            teamRepository.save(teamC);
+                collaborationRepository.addUserToTeam(userId, teamId, USER_POSITIONS.get((index - 1) % USER_POSITIONS.size()), baseTime.minusDays(index));
+                collaborationRepository.assignTeamToPricelist(teamId, pricelistId, index % 2 == 0 ? "PRIMARY" : "SECONDARY", baseTime.minusDays(index / 2L));
+                collaborationRepository.connectPricelistToRegion(pricelistId, regionId, COVERAGE_LEVELS.get((index - 1) % COVERAGE_LEVELS.size()));
 
-            Pricelist p1 = new Pricelist("price-1", "Q2 Pharma Pricelist", "ACTIVE", "3");
-            Pricelist p2 = new Pricelist("price-2", "Retail Spring Campaign", "ACTIVE", "5");
-            Pricelist p3 = new Pricelist("price-3", "Wholesale Special Offer", "DRAFT", "2");
-            Pricelist p4 = new Pricelist("price-4", "Regional OTC Updates", "ACTIVE", "4");
+                collaborationRepository.logUserActionOnPricelist(
+                        userId,
+                        pricelistId,
+                        ACTION_TYPES.get((index - 1) % ACTION_TYPES.size()),
+                        baseTime.minusMinutes(index),
+                        (index % 60) + 5
+                );
 
-            pricelistRepository.save(p1);
-            pricelistRepository.save(p2);
-            pricelistRepository.save(p3);
-            pricelistRepository.save(p4);
-
-            Region r1 = new Region("region-1", "Vojvodina", "Serbia");
-            Region r2 = new Region("region-2", "Belgrade", "Serbia");
-            Region r3 = new Region("region-3", "Central Serbia", "Serbia");
-
-            regionRepository.save(r1);
-            regionRepository.save(r2);
-            regionRepository.save(r3);
-
-            collaborationRepository.addUserToTeam("user-1", "team-1", "OWNER", ZonedDateTime.now(ZoneOffset.UTC).minusDays(20));
-            collaborationRepository.addUserToTeam("user-2", "team-1", "CONTRIBUTOR", ZonedDateTime.now(ZoneOffset.UTC).minusDays(18));
-            collaborationRepository.addUserToTeam("user-2", "team-2", "ANALYST", ZonedDateTime.now(ZoneOffset.UTC).minusDays(15));
-            collaborationRepository.addUserToTeam("user-3", "team-2", "OWNER", ZonedDateTime.now(ZoneOffset.UTC).minusDays(10));
-            collaborationRepository.addUserToTeam("user-4", "team-3", "OWNER", ZonedDateTime.now(ZoneOffset.UTC).minusDays(8));
-
-            collaborationRepository.assignTeamToPricelist("team-1", "price-1", "PRIMARY", ZonedDateTime.now(ZoneOffset.UTC).minusDays(12));
-            collaborationRepository.assignTeamToPricelist("team-1", "price-4", "SECONDARY", ZonedDateTime.now(ZoneOffset.UTC).minusDays(7));
-            collaborationRepository.assignTeamToPricelist("team-2", "price-2", "PRIMARY", ZonedDateTime.now(ZoneOffset.UTC).minusDays(9));
-            collaborationRepository.assignTeamToPricelist("team-2", "price-3", "SECONDARY", ZonedDateTime.now(ZoneOffset.UTC).minusDays(6));
-
-            collaborationRepository.connectPricelistToRegion("price-1", "region-1", "HIGH");
-            collaborationRepository.connectPricelistToRegion("price-2", "region-2", "HIGH");
-            collaborationRepository.connectPricelistToRegion("price-3", "region-3", "MEDIUM");
-            collaborationRepository.connectPricelistToRegion("price-4", "region-1", "LOW");
-
-            collaborationRepository.logUserActionOnPricelist("user-1", "price-1", "CREATE", ZonedDateTime.now(ZoneOffset.UTC).minusDays(11), 45);
-            collaborationRepository.logUserActionOnPricelist("user-2", "price-1", "UPDATE", ZonedDateTime.now(ZoneOffset.UTC).minusDays(6), 30);
-            collaborationRepository.logUserActionOnPricelist("user-2", "price-2", "UPDATE", ZonedDateTime.now(ZoneOffset.UTC).minusDays(4), 50);
-            collaborationRepository.logUserActionOnPricelist("user-3", "price-2", "CREATE", ZonedDateTime.now(ZoneOffset.UTC).minusDays(9), 60);
-            collaborationRepository.logUserActionOnPricelist("user-4", "price-4", "UPDATE", ZonedDateTime.now(ZoneOffset.UTC).minusDays(2), 35);
-            collaborationRepository.logUserActionOnPricelist("user-1", "price-4", "UPDATE", ZonedDateTime.now(ZoneOffset.UTC).minusHours(20), 25);
-
-            activityLogRepository.save(new ActivityLog(
-                    "activity-1", "CREATE", ZonedDateTime.now(ZoneOffset.UTC).minusDays(11), 45,
-                    "Initial creation of Q2 pricelist", "user-1", "team-1", "price-1", "region-1"
-            ));
-            
-            // ============================================================================
-            // ENHANCED ACTIVITY LOGS - FZ 2.4.1 Praćenje aktivnosti timova
-            // ============================================================================
-            // Raznovrsne aktivnosti sa različitim tipima, vremenima i trajanjima
-            
-            activityLogRepository.save(new ActivityLog(
-                    "activity-2", "UPDATE", ZonedDateTime.now(ZoneOffset.UTC).minusDays(6), 30,
-                    "Updated pricing strategy for Q2", "user-2", "team-1", "price-1", "region-1"
-            ));
-            
-            activityLogRepository.save(new ActivityLog(
-                    "activity-3", "PUBLISH", ZonedDateTime.now(ZoneOffset.UTC).minusDays(5), 15,
-                    "Published Q2 pricelist to production", "user-1", "team-1", "price-1", "region-1"
-            ));
-            
-            activityLogRepository.save(new ActivityLog(
-                    "activity-4", "CREATE", ZonedDateTime.now(ZoneOffset.UTC).minusDays(9), 60,
-                    "Created retail spring campaign pricelist", "user-3", "team-2", "price-2", "region-2"
-            ));
-            
-            activityLogRepository.save(new ActivityLog(
-                    "activity-5", "UPDATE", ZonedDateTime.now(ZoneOffset.UTC).minusDays(4), 50,
-                    "Changed discount coefficients for retail", "user-2", "team-2", "price-2", "region-2"
-            ));
-            
-            activityLogRepository.save(new ActivityLog(
-                    "activity-6", "DELETE", ZonedDateTime.now(ZoneOffset.UTC).minusDays(3), 20,
-                    "Removed obsolete price tiers", "user-3", "team-2", "price-2", "region-2"
-            ));
-            
-            activityLogRepository.save(new ActivityLog(
-                    "activity-7", "ARCHIVE", ZonedDateTime.now(ZoneOffset.UTC).minusDays(2), 10,
-                    "Archived previous version of pricelist", "user-4", "team-3", "price-4", "region-1"
-            ));
-            
-            activityLogRepository.save(new ActivityLog(
-                    "activity-8", "UPDATE", ZonedDateTime.now(ZoneOffset.UTC).minusHours(20), 25,
-                    "Regional correction for OTC segment", "user-1", "team-1", "price-4", "region-1"
-            ));
-            
-            activityLogRepository.save(new ActivityLog(
-                    "activity-9", "ACTIVATE", ZonedDateTime.now(ZoneOffset.UTC).minusHours(18), 5,
-                    "Activated Q2 pharma pricelist in system", "user-2", "team-1", "price-1", "region-1"
-            ));
-            
-            activityLogRepository.save(new ActivityLog(
-                    "activity-10", "REVIEW", ZonedDateTime.now(ZoneOffset.UTC).minusHours(12), 40,
-                    "Reviewed and analyzed competitive pricing", "user-3", "team-2", "price-2", "region-2"
-            ));
-            
-            activityLogRepository.save(new ActivityLog(
-                    "activity-11", "UPDATE", ZonedDateTime.now(ZoneOffset.UTC).minusHours(8), 35,
-                    "Fine-tuned margin coefficients based on analysis", "user-1", "team-1", "price-1", "region-1"
-            ));
-            
-            activityLogRepository.save(new ActivityLog(
-                    "activity-12", "APPROVE", ZonedDateTime.now(ZoneOffset.UTC).minusHours(4), 15,
-                    "Approved all pending price changes", "user-4", "team-3", "price-4", "region-1"
-            ));
-            
-            // Dodatne aktivnosti za boljí analytics
-            activityLogRepository.save(new ActivityLog(
-                    "activity-13", "CREATE", ZonedDateTime.now(ZoneOffset.UTC).minusDays(7), 55,
-                    "Created new wholesale special offer", "user-2", "team-2", "price-3", "region-3"
-            ));
-            
-            activityLogRepository.save(new ActivityLog(
-                    "activity-14", "UPDATE", ZonedDateTime.now(ZoneOffset.UTC).minusDays(5), 45,
-                    "Updated promotion conditions", "user-3", "team-2", "price-3", "region-3"
-            ));
-            
-            activityLogRepository.save(new ActivityLog(
-                    "activity-15", "DELETE", ZonedDateTime.now(ZoneOffset.UTC).minusDays(1), 20,
-                    "Removed expired promotional prices", "user-1", "team-1", "price-4", "region-1"
-            ));
+                activityLogRepository.save(new ActivityLog(
+                        "activity-" + index,
+                        ACTION_TYPES.get((index - 1) % ACTION_TYPES.size()),
+                        baseTime.minusMinutes(index),
+                        (index % 60) + 5,
+                        "Seeded activity " + index,
+                        userId,
+                        teamId,
+                        pricelistId,
+                        regionId
+                ));
+            }
         };
     }
 }
