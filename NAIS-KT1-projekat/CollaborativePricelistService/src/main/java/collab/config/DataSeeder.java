@@ -17,6 +17,8 @@ import collab.repository.TeamRepository;
 import collab.repository.TeamUserRepository;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.List;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -24,7 +26,11 @@ import java.time.ZonedDateTime;
 @Configuration
 public class DataSeeder {
 
-        private static final int ENTITY_COUNT = 1000;
+        private static final int USER_COUNT = 1000;
+        private static final int TEAM_COUNT = 1000;
+        private static final int PRICELIST_COUNT = 1000;
+        private static final int REGION_COUNT = 1000;
+        private static final int ACTIVITIES_PER_USER = 4;
         private static final List<String> USER_POSITIONS = List.of("OWNER", "ANALYST", "SALES_MANAGER", "CONTRIBUTOR");
         private static final List<String> TEAM_TYPES = List.of("REGIONAL", "SEGMENT", "CAMPAIGN");
         private static final List<String> PRICELIST_STATUSES = List.of("ACTIVE", "DRAFT", "ARCHIVED");
@@ -42,14 +48,14 @@ public class DataSeeder {
             CollaborationRepository collaborationRepository
     ) {
         return args -> {
-                        neo4jClient.query("MATCH (n) DETACH DELETE n").run();
+            neo4jClient.query("MATCH (n) DETACH DELETE n").run();
 
-            List<TeamUser> teamUsers = new ArrayList<>(ENTITY_COUNT);
-            List<Team> teams = new ArrayList<>(ENTITY_COUNT);
-            List<Pricelist> pricelists = new ArrayList<>(ENTITY_COUNT);
-            List<Region> regions = new ArrayList<>(ENTITY_COUNT);
+            List<TeamUser> teamUsers = new ArrayList<>(USER_COUNT);
+            List<Team> teams = new ArrayList<>(TEAM_COUNT);
+            List<Pricelist> pricelists = new ArrayList<>(PRICELIST_COUNT);
+            List<Region> regions = new ArrayList<>(REGION_COUNT);
 
-            for (int index = 1; index <= ENTITY_COUNT; index++) {
+            for (int index = 1; index <= USER_COUNT; index++) {
                 TeamUser teamUser = new TeamUser(
                         "user-" + index,
                         "Team User " + index,
@@ -57,14 +63,18 @@ public class DataSeeder {
                         USER_POSITIONS.get((index - 1) % USER_POSITIONS.size())
                 );
                 teamUsers.add(teamUser);
+            }
 
+            for (int index = 1; index <= TEAM_COUNT; index++) {
                 Team team = new Team(
                         "team-" + index,
                         "Pricing Team " + index,
                         TEAM_TYPES.get((index - 1) % TEAM_TYPES.size())
                 );
                 teams.add(team);
+            }
 
+            for (int index = 1; index <= PRICELIST_COUNT; index++) {
                 Pricelist pricelist = new Pricelist(
                         "price-" + index,
                         "Pricelist " + index,
@@ -72,7 +82,9 @@ public class DataSeeder {
                         String.valueOf((index - 1) % 9 + 1)
                 );
                 pricelists.add(pricelist);
+            }
 
+            for (int index = 1; index <= REGION_COUNT; index++) {
                 Region region = new Region(
                         "region-" + index,
                         "Region " + index,
@@ -87,36 +99,79 @@ public class DataSeeder {
             regionRepository.saveAll(regions);
 
             ZonedDateTime baseTime = ZonedDateTime.now(ZoneOffset.UTC);
+                        Map<String, List<String>> userTeams = new LinkedHashMap<>();
+                        Map<String, List<String>> teamPricelists = new LinkedHashMap<>();
+                        Map<String, List<String>> pricelistRegions = new LinkedHashMap<>();
 
-            for (int index = 1; index <= ENTITY_COUNT; index++) {
-                String userId = "user-" + index;
-                String teamId = "team-" + index;
-                String pricelistId = "price-" + index;
-                String regionId = "region-" + index;
+                        for (int index = 1; index <= USER_COUNT; index++) {
+                                String userId = "user-" + index;
+                                String primaryTeamId = "team-" + ((index - 1) % TEAM_COUNT + 1);
+                                String secondaryTeamId = "team-" + ((index + 2) % TEAM_COUNT + 1);
 
-                collaborationRepository.addUserToTeam(userId, teamId, USER_POSITIONS.get((index - 1) % USER_POSITIONS.size()), baseTime.minusDays(index));
-                collaborationRepository.assignTeamToPricelist(teamId, pricelistId, index % 2 == 0 ? "PRIMARY" : "SECONDARY", baseTime.minusDays(index / 2L));
-                collaborationRepository.connectPricelistToRegion(pricelistId, regionId, COVERAGE_LEVELS.get((index - 1) % COVERAGE_LEVELS.size()));
+                                userTeams.put(userId, List.of(primaryTeamId, secondaryTeamId));
+                                collaborationRepository.addUserToTeam(userId, primaryTeamId, USER_POSITIONS.get((index - 1) % USER_POSITIONS.size()), baseTime.minusDays(index));
+                                collaborationRepository.addUserToTeam(userId, secondaryTeamId, "CONTRIBUTOR", baseTime.minusDays(index / 2L));
+                        }
 
-                collaborationRepository.logUserActionOnPricelist(
-                        userId,
-                        pricelistId,
-                        ACTION_TYPES.get((index - 1) % ACTION_TYPES.size()),
-                        baseTime.minusMinutes(index),
-                        (index % 60) + 5
-                );
+                        for (int index = 1; index <= TEAM_COUNT; index++) {
+                                String teamId = "team-" + index;
+                                String primaryPricelistId = "price-" + ((index - 1) % PRICELIST_COUNT + 1);
+                                String secondaryPricelistId = "price-" + ((index + 4) % PRICELIST_COUNT + 1);
+                                String backupPricelistId = "price-" + ((index + 8) % PRICELIST_COUNT + 1);
 
-                activityLogRepository.save(new ActivityLog(
-                        "activity-" + index,
-                        ACTION_TYPES.get((index - 1) % ACTION_TYPES.size()),
-                        baseTime.minusMinutes(index),
-                        (index % 60) + 5,
-                        "Seeded activity " + index,
-                        userId,
-                        teamId,
-                        pricelistId,
-                        regionId
-                ));
+                                teamPricelists.put(teamId, List.of(primaryPricelistId, secondaryPricelistId, backupPricelistId));
+                                collaborationRepository.assignTeamToPricelist(teamId, primaryPricelistId, "PRIMARY", baseTime.minusDays(index));
+                                collaborationRepository.assignTeamToPricelist(teamId, secondaryPricelistId, "SUPPORT", baseTime.minusDays(index + 1L));
+                                collaborationRepository.assignTeamToPricelist(teamId, backupPricelistId, "REVIEW", baseTime.minusDays(index + 2L));
+                        }
+
+                        for (int index = 1; index <= PRICELIST_COUNT; index++) {
+                                String pricelistId = "price-" + index;
+                                String primaryRegionId = "region-" + ((index - 1) % REGION_COUNT + 1);
+                                String secondaryRegionId = "region-" + ((index + 2) % REGION_COUNT + 1);
+
+                                pricelistRegions.put(pricelistId, List.of(primaryRegionId, secondaryRegionId));
+                                collaborationRepository.connectPricelistToRegion(pricelistId, primaryRegionId, COVERAGE_LEVELS.get((index - 1) % COVERAGE_LEVELS.size()));
+                                collaborationRepository.connectPricelistToRegion(pricelistId, secondaryRegionId, COVERAGE_LEVELS.get(index % COVERAGE_LEVELS.size()));
+                        }
+
+                        int activityIndex = 1;
+                        for (int index = 1; index <= USER_COUNT; index++) {
+                                String userId = "user-" + index;
+                                List<String> assignedTeams = userTeams.get(userId);
+
+                                for (int activityRound = 0; activityRound < ACTIVITIES_PER_USER; activityRound++) {
+                                        String teamId = assignedTeams.get(activityRound % assignedTeams.size());
+                                        List<String> teamPricelistAssignments = teamPricelists.get(teamId);
+                                        String pricelistId = teamPricelistAssignments.get(activityRound % teamPricelistAssignments.size());
+                                        List<String> regionsForPricelist = pricelistRegions.get(pricelistId);
+                                        String regionId = regionsForPricelist.get(activityRound % regionsForPricelist.size());
+                                        String actionType = ACTION_TYPES.get((activityIndex - 1) % ACTION_TYPES.size());
+                                        int durationMinutes = 10 + ((index + activityRound) % 45);
+                                        ZonedDateTime timestamp = baseTime.minusHours(index * 2L + activityRound).minusMinutes(activityRound * 7L);
+
+                                        collaborationRepository.logUserActionOnPricelist(
+                                                        userId,
+                                                        pricelistId,
+                                                        actionType,
+                                                        timestamp,
+                                                        durationMinutes
+                                        );
+
+                                        activityLogRepository.save(new ActivityLog(
+                                                        "activity-" + activityIndex,
+                                                        actionType,
+                                                        timestamp,
+                                                        durationMinutes,
+                                                        "" + userId + " " + actionType + " on " + pricelistId + " for " + regionId,
+                                                        userId,
+                                                        teamId,
+                                                        pricelistId,
+                                                        regionId
+                                        ));
+
+                                        activityIndex++;
+                                }
             }
         };
     }
