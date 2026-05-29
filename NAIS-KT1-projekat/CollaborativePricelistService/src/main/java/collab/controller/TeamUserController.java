@@ -1,4 +1,4 @@
-package rs.ac.uns.acs.nais.CollaborativePricelistService.controller;
+package collab.controller;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import rs.ac.uns.acs.nais.CollaborativePricelistService.model.TeamUser;
-import rs.ac.uns.acs.nais.CollaborativePricelistService.service.CollaborationGraphService;
+import collab.model.TeamUser;
+import collab.service.CollaborationGraphService;
 
 import java.util.List;
 

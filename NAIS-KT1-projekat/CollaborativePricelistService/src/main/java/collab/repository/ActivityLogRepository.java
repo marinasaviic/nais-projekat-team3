@@ -1,8 +1,8 @@
-package rs.ac.uns.acs.nais.CollaborativePricelistService.repository;
+package collab.repository;
 
 import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
-import rs.ac.uns.acs.nais.CollaborativePricelistService.model.ActivityLog;
+import collab.model.ActivityLog;
 
 import java.time.ZonedDateTime;
 import java.util.List;

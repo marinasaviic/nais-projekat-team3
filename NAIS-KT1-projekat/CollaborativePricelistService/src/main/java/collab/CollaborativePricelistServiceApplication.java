@@ -1,4 +1,4 @@
-package rs.ac.uns.acs.nais.CollaborativePricelistService;
+package collab;
 
 import org.neo4j.cypherdsl.core.renderer.Configuration;
 import org.neo4j.cypherdsl.core.renderer.Dialect;

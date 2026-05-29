@@ -1,4 +1,4 @@
-package rs.ac.uns.acs.nais.CollaborativePricelistService.model;
+package collab.model;
 
 import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;

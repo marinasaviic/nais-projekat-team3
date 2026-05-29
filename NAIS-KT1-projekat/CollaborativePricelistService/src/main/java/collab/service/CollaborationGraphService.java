@@ -1,17 +1,17 @@
-package rs.ac.uns.acs.nais.CollaborativePricelistService.service;
+package collab.service;
 
 import org.springframework.stereotype.Service;
-import rs.ac.uns.acs.nais.CollaborativePricelistService.model.ActivityLog;
-import rs.ac.uns.acs.nais.CollaborativePricelistService.model.Pricelist;
-import rs.ac.uns.acs.nais.CollaborativePricelistService.model.Region;
-import rs.ac.uns.acs.nais.CollaborativePricelistService.model.Team;
-import rs.ac.uns.acs.nais.CollaborativePricelistService.model.TeamUser;
-import rs.ac.uns.acs.nais.CollaborativePricelistService.repository.ActivityLogRepository;
-import rs.ac.uns.acs.nais.CollaborativePricelistService.repository.CollaborationRepository;
-import rs.ac.uns.acs.nais.CollaborativePricelistService.repository.PricelistRepository;
-import rs.ac.uns.acs.nais.CollaborativePricelistService.repository.RegionRepository;
-import rs.ac.uns.acs.nais.CollaborativePricelistService.repository.TeamRepository;
-import rs.ac.uns.acs.nais.CollaborativePricelistService.repository.TeamUserRepository;
+import collab.model.ActivityLog;
+import collab.model.Pricelist;
+import collab.model.Region;
+import collab.model.Team;
+import collab.model.TeamUser;
+import collab.repository.ActivityLogRepository;
+import collab.repository.CollaborationRepository;
+import collab.repository.PricelistRepository;
+import collab.repository.RegionRepository;
+import collab.repository.TeamRepository;
+import collab.repository.TeamUserRepository;
 
 import java.time.ZonedDateTime;
 import java.util.List;

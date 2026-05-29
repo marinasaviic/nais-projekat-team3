@@ -1,4 +1,4 @@
-package rs.ac.uns.acs.nais.CollaborativePricelistService.controller;
+package collab.controller;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -8,9 +8,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import rs.ac.uns.acs.nais.CollaborativePricelistService.model.Pricelist;
-import rs.ac.uns.acs.nais.CollaborativePricelistService.model.Team;
-import rs.ac.uns.acs.nais.CollaborativePricelistService.service.CollaborationGraphService;
+import collab.model.Pricelist;
+import collab.model.Team;
+import collab.service.CollaborationGraphService;
 
 import java.time.ZonedDateTime;
 

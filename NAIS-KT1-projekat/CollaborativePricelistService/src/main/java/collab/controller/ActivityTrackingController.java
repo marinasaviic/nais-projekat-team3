@@ -1,10 +1,10 @@
-package rs.ac.uns.acs.nais.CollaborativePricelistService.controller;
+package collab.controller;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
-import rs.ac.uns.acs.nais.CollaborativePricelistService.model.ActivityLog;
-import rs.ac.uns.acs.nais.CollaborativePricelistService.service.ActivityService;
-import rs.ac.uns.acs.nais.CollaborativePricelistService.service.CollaborationGraphService;
+import collab.model.ActivityLog;
+import collab.service.ActivityService;
+import collab.service.CollaborationGraphService;
 
 import java.time.ZonedDateTime;
 import java.util.List;

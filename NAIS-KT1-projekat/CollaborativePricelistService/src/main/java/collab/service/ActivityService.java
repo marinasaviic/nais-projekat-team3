@@ -1,9 +1,9 @@
-package rs.ac.uns.acs.nais.CollaborativePricelistService.service;
+package collab.service;
 
 import org.springframework.stereotype.Service;
-import rs.ac.uns.acs.nais.CollaborativePricelistService.model.ActivityLog;
-import rs.ac.uns.acs.nais.CollaborativePricelistService.repository.ActivityLogRepository;
-import rs.ac.uns.acs.nais.CollaborativePricelistService.repository.CollaborationRepository;
+import collab.model.ActivityLog;
+import collab.repository.ActivityLogRepository;
+import collab.repository.CollaborationRepository;
 
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
