@@ -32,6 +32,13 @@ spring:
           filters:
             - StripPrefix=1
 
+        - id: timeseries-service
+          uri: lb://timeseries-service
+          predicates:
+            - Path=/timeseries/**
+          filters:
+            - StripPrefix=1
+
 eureka:
   client:
     service-url:

@@ -105,7 +105,7 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
-					<mainClass>rs.ac.uns.acs.nais.CollaborativePricelistService.CollaborativePricelistServiceApplication</mainClass>
+					<mainClass>collab.CollaborativePricelistServiceApplication</mainClass>
 					<excludes>
 						<exclude>
 							<groupId>org.projectlombok</groupId>
