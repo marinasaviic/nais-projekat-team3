@@ -278,7 +278,7 @@ public class CollaborationGraphService {
         if (cached.isPresent()) {
             return Arrays.asList(cached.get());
         }
-        java.util.List<Pricelist> fetched = collaborationRepository.findActivePricelistsForRegion(regionId);
+        java.util.List<Pricelist> fetched = pricelistRepository.findActivePricelistsForRegion(regionId);
         // store in cache for 5 minutes
         cacheService.set(key, fetched, Duration.ofMinutes(5));
         return fetched;

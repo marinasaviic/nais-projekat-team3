@@ -173,12 +173,7 @@ public interface CollaborationRepository extends Neo4jRepository<Team, String> {
     """)
     List<String> mostActiveUserPerRegion();
 
-    @Query("""
-        MATCH (p:Pricelist)-[:FOR_REGION]->(r:Region {id: $regionId})
-        WHERE p.status = 'ACTIVE'
-        RETURN p
-    """)
-    java.util.List<Pricelist> findActivePricelistsForRegion(String regionId);
+    
 
     @Query("""
         MATCH (p:Pricelist {id: $pricelistId})-[:FOR_REGION]->(r:Region)
