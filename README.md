@@ -15,11 +15,9 @@ Projekat se sastoji iz sledećih servisa:
 - Eureka Service (service discovery)
 - Gateway Service (API gateway)
 - Graph Database Service
-- Vector Database Service
 
 ## Baze podataka
 - Graf baza: Neo4j
-- Vektorska baza: Milvus
 
 ## Pokretanje projekta
 docker compose up --build

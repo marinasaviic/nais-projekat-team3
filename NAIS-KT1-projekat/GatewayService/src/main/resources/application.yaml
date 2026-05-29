@@ -32,13 +32,6 @@ spring:
           filters:
             - StripPrefix=1
 
-        - id: vector-database-service
-          uri: lb://vector-database-service
-          predicates:
-            - Path=/vector/**
-          filters:
-            - StripPrefix=1
-
 eureka:
   client:
     service-url:

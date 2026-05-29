@@ -25,4 +25,4 @@ __MACOSX/
 .env
 *.env
 
-NAIS-KT1-projekat/VectorDatabaseService/volumes/
+# (removed VectorDatabaseService volumes - service deleted)
