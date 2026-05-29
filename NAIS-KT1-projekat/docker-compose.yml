@@ -133,7 +133,46 @@ services:
       interval: 20s
       timeout: 10s
       retries: 5
+
+  timeseries-service:
+    build:
+      context: ./TimeseriesDatabaseService
+      dockerfile: Dockerfile
+    image: timeseries-service:latest
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      SPRING_INFLUX_URL: http://influxdb:8086
+      SPRING_INFLUX_TOKEN: my-super-secret-auth-token
+      SPRING_INFLUX_ORG: nais_org
+      SPRING_INFLUX_BUCKET: nais_bucket
+    ports:
+      - "9080:8080"
+
+  influxdb:
+    image: influxdb:2.7.6
+    ports:
+      - "8086:8086"
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: nais
+      DOCKER_INFLUXDB_INIT_PASSWORD: password
+      DOCKER_INFLUXDB_INIT_ORG: nais_org
+      DOCKER_INFLUXDB_INIT_BUCKET: nais_bucket
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: my-super-secret-auth-token
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 volumes: # Declares named volumes for persistent data storage across container restarts
   sales_neo4j_data: {}
   portfolio_neo4j_data: {}
   collaborative_pricelist_data: {}
+  influxdb_data: {}
