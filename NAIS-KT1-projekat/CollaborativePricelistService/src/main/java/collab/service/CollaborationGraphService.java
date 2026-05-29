@@ -14,8 +14,14 @@ import collab.repository.TeamRepository;
 import collab.repository.TeamUserRepository;
 
 import java.time.ZonedDateTime;
+import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
+
+import collab.cache.CacheService;
+import collab.model.Pricelist;
 
 @Service
 public class CollaborationGraphService {
@@ -26,6 +32,7 @@ public class CollaborationGraphService {
     private final RegionRepository regionRepository;
     private final ActivityLogRepository activityLogRepository;
     private final CollaborationRepository collaborationRepository;
+    private final CacheService cacheService;
 
     public CollaborationGraphService(
             TeamUserRepository teamUserRepository,
@@ -33,7 +40,8 @@ public class CollaborationGraphService {
             PricelistRepository pricelistRepository,
             RegionRepository regionRepository,
             ActivityLogRepository activityLogRepository,
-            CollaborationRepository collaborationRepository
+                CollaborationRepository collaborationRepository,
+                CacheService cacheService
     ) {
         this.teamUserRepository = teamUserRepository;
         this.teamRepository = teamRepository;
@@ -41,6 +49,7 @@ public class CollaborationGraphService {
         this.regionRepository = regionRepository;
         this.activityLogRepository = activityLogRepository;
         this.collaborationRepository = collaborationRepository;
+        this.cacheService = cacheService;
     }
 
     // TEAM USER CRUD
@@ -99,7 +108,9 @@ public class CollaborationGraphService {
     // PRICELIST CRUD
 
     public Pricelist createPricelist(Pricelist pricelist) {
-        return pricelistRepository.save(pricelist);
+        Pricelist saved = pricelistRepository.save(pricelist);
+        // Invalidate any region cache entries related to this pricelist (none initially)
+        return saved;
     }
 
     public List<Pricelist> getAllPricelists() {
@@ -116,10 +127,29 @@ public class CollaborationGraphService {
         existingPricelist.setName(updatedPricelist.getName());
         existingPricelist.setStatus(updatedPricelist.getStatus());
         existingPricelist.setVersion(updatedPricelist.getVersion());
-        return pricelistRepository.save(existingPricelist);
+        Pricelist saved = pricelistRepository.save(existingPricelist);
+        // if status changed to Archived, invalidate related region caches
+        if ("ARCHIVED".equalsIgnoreCase(saved.getStatus())) {
+            java.util.List<String> regions = collaborationRepository.findRegionsForPricelist(id);
+            for (String regionId : regions) {
+                cacheService.del(regionCacheKey(regionId));
+            }
+        } else {
+            // general invalidation for regions this pricelist is assigned to
+            java.util.List<String> regions = collaborationRepository.findRegionsForPricelist(id);
+            for (String regionId : regions) {
+                cacheService.del(regionCacheKey(regionId));
+            }
+        }
+        return saved;
     }
 
     public void deletePricelist(String id) {
+        // invalidate caches for regions the pricelist belonged to
+        java.util.List<String> regions = collaborationRepository.findRegionsForPricelist(id);
+        for (String regionId : regions) {
+            cacheService.del(regionCacheKey(regionId));
+        }
         pricelistRepository.deleteById(id);
     }
 
@@ -221,6 +251,8 @@ public class CollaborationGraphService {
         getPricelistById(pricelistId);
         getRegionById(regionId);
         collaborationRepository.connectPricelistToRegion(pricelistId, regionId, coverageLevel);
+        // invalidate cache for that region
+        cacheService.del(regionCacheKey(regionId));
         return getPricelistById(pricelistId);
     }
 
@@ -228,10 +260,28 @@ public class CollaborationGraphService {
         getPricelistById(pricelistId);
         getRegionById(regionId);
         collaborationRepository.updatePricelistRegionCoverage(pricelistId, regionId, newCoverageLevel);
+        cacheService.del(regionCacheKey(regionId));
     }
 
     public void disconnectPricelistFromRegion(String pricelistId, String regionId) {
         collaborationRepository.disconnectPricelistFromRegion(pricelistId, regionId);
+        cacheService.del(regionCacheKey(regionId));
+    }
+
+    private String regionCacheKey(String regionId) {
+        return "region:" + regionId + ":pricelists";
+    }
+
+    public List<Pricelist> getPricelistsForRegion(String regionId) {
+        String key = regionCacheKey(regionId);
+        java.util.Optional<Pricelist[]> cached = cacheService.get(key, Pricelist[].class);
+        if (cached.isPresent()) {
+            return Arrays.asList(cached.get());
+        }
+        java.util.List<Pricelist> fetched = pricelistRepository.findActivePricelistsForRegion(regionId);
+        // store in cache for 5 minutes
+        cacheService.set(key, fetched, Duration.ofMinutes(5));
+        return fetched;
     }
 
     public void logUserActionOnPricelist(String userId, String pricelistId, String actionType, ZonedDateTime timestamp, Integer durationMinutes) {

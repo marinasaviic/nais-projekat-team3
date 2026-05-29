@@ -33,6 +33,11 @@ public class PricelistController {
         return collaborationGraphService.getAllPricelists();
     }
 
+    @GetMapping("/region/{regionId}/view")
+    public List<Pricelist> getPricelistsForRegion(@PathVariable String regionId) {
+        return collaborationGraphService.getPricelistsForRegion(regionId);
+    }
+
     @GetMapping("/{id}")
     public Pricelist getPricelistById(@PathVariable String id) {
         return collaborationGraphService.getPricelistById(id);
