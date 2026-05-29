@@ -24,5 +24,3 @@ __MACOSX/
 # Env
 .env
 *.env
-
-# (removed VectorDatabaseService volumes - service deleted)
