@@ -3,6 +3,7 @@ package collab.repository;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 import collab.model.Team;
+import collab.model.Pricelist;
 
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -171,6 +172,19 @@ public interface CollaborationRepository extends Neo4jRepository<Team, String> {
         RETURN r.name + ' | ' + topUser
     """)
     List<String> mostActiveUserPerRegion();
+
+    @Query("""
+        MATCH (p:Pricelist)-[:FOR_REGION]->(r:Region {id: $regionId})
+        WHERE p.status = 'ACTIVE'
+        RETURN p
+    """)
+    java.util.List<Pricelist> findActivePricelistsForRegion(String regionId);
+
+    @Query("""
+        MATCH (p:Pricelist {id: $pricelistId})-[:FOR_REGION]->(r:Region)
+        RETURN r.id AS regionId
+    """)
+    java.util.List<String> findRegionsForPricelist(String pricelistId);
 
     // ============================================================================
     // FZ 2.4.1: Praćenje aktivnosti timova - PERFORMANCE EVALUATION QUERIES
