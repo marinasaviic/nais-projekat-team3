@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import salesanalytics.model.SalesAnalyticsAggregate;
 import salesanalytics.model.SalesProcessEvent;
 import salesanalytics.repository.SalesAnalyticsRepository;
+import org.springframework.cache.annotation.Cacheable;
 
 import java.util.List;
 
@@ -32,14 +33,17 @@ public class SalesAnalyticsService {
         return salesAnalyticsRepository.findAllByRegion(region);
     }
 
+    @Cacheable(value = "topNegotiationPipeline")
     public List<SalesAnalyticsAggregate> topSalesRepsByNegotiationPipeline() {
         return salesAnalyticsRepository.topSalesRepsByNegotiationPipeline();
     }
 
+    @Cacheable(value = "stageBottlenecks")
     public List<SalesAnalyticsAggregate> stageBottlenecks() {
         return salesAnalyticsRepository.stageBottlenecks();
     }
 
+    @Cacheable(value = "weeklyPipelineGrowth")
     public List<SalesAnalyticsAggregate> weeklyPipelineGrowthByRegion() {
         return salesAnalyticsRepository.weeklyPipelineGrowthByRegion();
     }
