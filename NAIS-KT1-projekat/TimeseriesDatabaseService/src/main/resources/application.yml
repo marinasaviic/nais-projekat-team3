@@ -1,0 +1,20 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: timeseries-service
+  influx:
+    token: ${SPRING_INFLUX_TOKEN:my-super-secret-auth-token}
+    bucket: ${SPRING_INFLUX_BUCKET:team_productivity_tracking}
+    org: ${SPRING_INFLUX_ORG:nais_org}
+    url: ${SPRING_INFLUX_URL:http://influxdb:8086}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+      healthcheck:
+        enabled: true
+  instance:
+    prefer-ip-address: true

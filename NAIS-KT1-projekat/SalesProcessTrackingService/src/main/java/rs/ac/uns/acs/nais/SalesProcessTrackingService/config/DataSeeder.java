@@ -12,6 +12,9 @@ import rs.ac.uns.acs.nais.SalesProcessTrackingService.repository.SalesProcessRep
 import rs.ac.uns.acs.nais.SalesProcessTrackingService.repository.SalesRepresentativeRepository;
 import rs.ac.uns.acs.nais.SalesProcessTrackingService.repository.StageRepository;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Configuration
 public class DataSeeder {
 
@@ -28,7 +31,9 @@ public class DataSeeder {
                 return;
             }
 
+            // =====================
             // STAGES
+            // =====================
             Stage qualification = new Stage("stage-1", "Lead Qualification");
             Stage negotiation = new Stage("stage-2", "Negotiation");
             Stage offerSent = new Stage("stage-3", "Offer Sent");
@@ -46,48 +51,57 @@ public class DataSeeder {
             stageRepository.save(closedWon);
             stageRepository.save(closedLost);
 
+            // =====================
             // CUSTOMERS
-            Customer benu = new Customer("customer-1", "Apoteka Benu", "Novi Sad");
-            Customer galen = new Customer("customer-2", "Galen Pharm", "Beograd");
-            Customer medis = new Customer("customer-3", "Medis Plus", "Niš");
+            // =====================
+            List<Customer> customers = new ArrayList<>();
+            String[] cities = {"Novi Sad", "Beograd", "Niš", "Kragujevac", "Subotica"};
 
-            customerRepository.save(benu);
-            customerRepository.save(galen);
-            customerRepository.save(medis);
+            for (int i = 1; i <= 50; i++) {
+                Customer customer = new Customer(
+                        "customer-" + i,
+                        "Pharmacy Customer " + i,
+                        cities[i % cities.length]
+                );
+                customers.add(customerRepository.save(customer));
+            }
 
+            // =====================
             // SALES REPRESENTATIVES
-            SalesRepresentative ana = new SalesRepresentative("rep-1", "Ana Jovanovic");
-            SalesRepresentative marko = new SalesRepresentative("rep-2", "Marko Ilic");
+            // =====================
+            List<SalesRepresentative> representatives = new ArrayList<>();
 
-            salesRepresentativeRepository.save(ana);
-            salesRepresentativeRepository.save(marko);
+            for (int i = 1; i <= 10; i++) {
+                SalesRepresentative representative = new SalesRepresentative(
+                        "rep-" + i,
+                        "Sales Representative " + i
+                );
+                representatives.add(salesRepresentativeRepository.save(representative));
+            }
 
+            // =====================
             // SALES PROCESSES
-            SalesProcess process1 = new SalesProcess("process-1", "Benu Spring Campaign", "ACTIVE");
-            SalesProcess process2 = new SalesProcess("process-2", "Galen New Product Launch", "ACTIVE");
-            SalesProcess process3 = new SalesProcess("process-3", "Medis Contract Renewal", "CLOSED_WON");
-            SalesProcess process4 = new SalesProcess("process-4", "Benu OTC Expansion", "CLOSED_LOST");
+            // =====================
+            String[] statuses = {"ACTIVE", "CLOSED_WON", "CLOSED_LOST"};
+            Stage[] stages = {qualification, negotiation, offerSent, closedWon, closedLost};
 
-            salesProcessRepository.save(process1);
-            salesProcessRepository.save(process2);
-            salesProcessRepository.save(process3);
-            salesProcessRepository.save(process4);
+            for (int i = 1; i <= 500; i++) {
+                SalesProcess process = new SalesProcess(
+                        "process-" + i,
+                        "Sales Process " + i,
+                        statuses[i % statuses.length]
+                );
 
-            // RELATIONSHIPS
-            salesProcessRepository.connectCustomerToProcess("customer-1", "process-1");
-            salesProcessRepository.connectCustomerToProcess("customer-2", "process-2");
-            salesProcessRepository.connectCustomerToProcess("customer-3", "process-3");
-            salesProcessRepository.connectCustomerToProcess("customer-1", "process-4");
+                salesProcessRepository.save(process);
 
-            salesProcessRepository.connectRepresentativeToProcess("rep-1", "process-1");
-            salesProcessRepository.connectRepresentativeToProcess("rep-1", "process-3");
-            salesProcessRepository.connectRepresentativeToProcess("rep-2", "process-2");
-            salesProcessRepository.connectRepresentativeToProcess("rep-2", "process-4");
+                Customer customer = customers.get(i % customers.size());
+                SalesRepresentative representative = representatives.get(i % representatives.size());
+                Stage currentStage = stages[i % stages.length];
 
-            salesProcessRepository.setCurrentStage("process-1", "stage-2");
-            salesProcessRepository.setCurrentStage("process-2", "stage-3");
-            salesProcessRepository.setCurrentStage("process-3", "stage-4");
-            salesProcessRepository.setCurrentStage("process-4", "stage-5");
+                salesProcessRepository.connectCustomerToProcess(customer.getId(), process.getId());
+                salesProcessRepository.connectRepresentativeToProcess(representative.getId(), process.getId());
+                salesProcessRepository.setCurrentStage(process.getId(), currentStage.getId());
+            }
         };
     }
 }
