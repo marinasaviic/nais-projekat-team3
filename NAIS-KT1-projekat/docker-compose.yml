@@ -153,6 +153,27 @@ services:
     ports:
       - "9080:8080"
 
+  sales-analytics-service:
+    build:
+      context: ./SalesAnalyticsService
+      dockerfile: Dockerfile
+    image: sales-analytics-service:latest
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      SPRING_INFLUX_URL: http://influxdb:8086
+      SPRING_INFLUX_TOKEN: my-super-secret-auth-token
+      SPRING_INFLUX_ORG: nais_org
+      SPRING_INFLUX_BUCKET: nais_bucket
+    ports:
+      - "9090:8080"
+
   influxdb:
     image: influxdb:2.7.6
     ports:
@@ -171,6 +192,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  redis:
+    image: redis/redis-stack:latest
+    ports:
+      - "6379:6379"
+      - "8001:8001"
+
+
 volumes: # Declares named volumes for persistent data storage across container restarts
   sales_neo4j_data: {}
   portfolio_neo4j_data: {}
