@@ -1,0 +1,27 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: sales-analytics-service
+  cache:
+    type: redis
+  influx:
+    token: ${SPRING_INFLUX_TOKEN:my-super-secret-auth-token}
+    bucket: ${SPRING_INFLUX_BUCKET:nais_bucket}
+    org: ${SPRING_INFLUX_ORG:nais_org}
+    url: ${SPRING_INFLUX_URL:http://influxdb:8086}
+  data:
+    redis:
+      host: ${SPRING_REDIS_HOST:redis}
+      port: ${SPRING_REDIS_PORT:6379}
+  
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+      healthcheck:
+        enabled: true
+  instance:
+    prefer-ip-address: true

@@ -46,6 +46,20 @@ spring:
           filters:
             - StripPrefix=1
 
+        - id: adverse-effects-search-service
+          uri: lb://adverse-effects-search-service
+          predicates:
+            - Path=/adverse-effects-search-service/**
+          filters:
+            - StripPrefix=1
+
+        - id: sales-analytics-service
+          uri: http://sales-analytics-service:8080
+          predicates:
+            - Path=/analytics/**
+          filters:
+            - StripPrefix=1
+
 eureka:
   client:
     service-url:
