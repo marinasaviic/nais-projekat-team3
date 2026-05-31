@@ -38,6 +38,13 @@ spring:
             - Path=/timeseries/**
           filters:
             - StripPrefix=1
+        
+        - id: search-analytics-service
+          uri: lb://search-analytics-service
+          predicates:
+            - Path=/search/**
+          filters:
+            - StripPrefix=1
 
 eureka:
   client:

@@ -153,6 +153,79 @@ services:
     ports:
       - "9080:8080"
 
+  search-analytics-service:
+    build:
+      context: ./SearchAnalyticsService
+      dockerfile: Dockerfile
+    image: search-analytics-service:latest
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      ELASTICSEARCH_HOST: elasticsearch
+      ELASTICSEARCH_PORT: 9200
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+    ports:
+      - "9090:8080"
+    restart: on-failure
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.3
+    container_name: portfolio-elasticsearch
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - portfolio_elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.3
+    container_name: portfolio-kibana
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+
+  redis:
+    image: redis:7
+    container_name: portfolio-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - portfolio_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: portfolio-redisinsight
+    depends_on:
+      - redis
+    ports:
+      - "5540:5540"
+    volumes:
+      - portfolio_redisinsight_data:/data
+
   influxdb:
     image: influxdb:2.7.6
     ports:
@@ -176,3 +249,6 @@ volumes: # Declares named volumes for persistent data storage across container r
   portfolio_neo4j_data: {}
   collaborative_pricelist_data: {}
   influxdb_data: {}
+  portfolio_elasticsearch_data: {}
+  portfolio_redis_data: {}
+  portfolio_redisinsight_data: {}
