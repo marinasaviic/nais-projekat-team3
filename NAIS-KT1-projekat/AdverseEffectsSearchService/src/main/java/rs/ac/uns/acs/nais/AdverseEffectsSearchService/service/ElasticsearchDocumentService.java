@@ -44,9 +44,34 @@ public class ElasticsearchDocumentService {
         client.performRequest(create);
     }
 
+    public void deleteIndex(String index) throws IOException {
+        try {
+            client.performRequest(new Request("DELETE", "/" + index));
+        } catch (ResponseException ex) {
+            if (ex.getResponse().getStatusLine().getStatusCode() != 404) {
+                throw ex;
+            }
+        }
+    }
+
+    public void forceCreateIndex(String index, Map<String, Object> mapping) throws IOException {
+        deleteIndex(index);
+        try { Thread.sleep(500); } catch (InterruptedException ignored) {}
+        Request create = new Request("PUT", "/" + index);
+        create.setEntity(jsonEntity(mapping));
+        client.performRequest(create);
+    }
+
     public long count(String index) throws IOException {
-        Response response = client.performRequest(new Request("GET", "/" + index + "/_count"));
-        return objectMapper.readTree(response.getEntity().getContent()).path("count").asLong();
+        try {
+            Response response = client.performRequest(new Request("GET", "/" + index + "/_count"));
+            return objectMapper.readTree(response.getEntity().getContent()).path("count").asLong();
+        } catch (ResponseException ex) {
+            if (ex.getResponse().getStatusLine().getStatusCode() == 404) {
+                return 0L;
+            }
+            throw ex;
+        }
     }
 
     public JsonNode create(String index, String id, Object document) throws IOException {

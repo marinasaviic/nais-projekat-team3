@@ -25,9 +25,11 @@ public class AnalyticsController {
             @RequestParam(required = false) String text,
             @RequestParam(required = false) String therapeuticClass,
             @RequestParam(required = false) Double minRiskScore,
-            @RequestParam(defaultValue = "desc") String sortDirection
+            @RequestParam(defaultValue = "desc") String sortDirection,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
     ) throws IOException {
-        return analytics.searchDrugRisk(text, therapeuticClass, minRiskScore, sortDirection);
+        return analytics.searchDrugRisk(text, therapeuticClass, minRiskScore, sortDirection, page, size);
     }
 
     @GetMapping("/reports-by-region")
@@ -35,17 +37,21 @@ public class AnalyticsController {
             @RequestParam(required = false) String region,
             @RequestParam(required = false) String severity,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
     ) throws IOException {
-        return analytics.reportsByRegion(region, severity, from, to);
+        return analytics.reportsByRegion(region, severity, from, to, page, size);
     }
 
     @GetMapping("/manufacturer-safety")
     public JsonNode manufacturerSafety(
             @RequestParam(required = false) String manufacturer,
             @RequestParam(required = false) String reactionType,
-            @RequestParam(required = false) Integer minReports
+            @RequestParam(required = false) Integer minReports,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
     ) throws IOException {
-        return analytics.manufacturerSafety(manufacturer, reactionType, minReports);
+        return analytics.manufacturerSafety(manufacturer, reactionType, minReports, page, size);
     }
 }

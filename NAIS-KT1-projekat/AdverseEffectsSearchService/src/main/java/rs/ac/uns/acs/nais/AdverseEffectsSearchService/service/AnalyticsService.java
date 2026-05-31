@@ -23,12 +23,17 @@ public class AnalyticsService {
         this.objectMapper = objectMapper;
     }
 
-    public JsonNode searchDrugRisk(String text, String therapeuticClass, Double minRiskScore, String sortDirection) throws IOException {
-        String cacheKey = "analytics:drug-risk:" + text + ":" + therapeuticClass + ":" + minRiskScore + ":" + sortDirection;
+    public JsonNode searchDrugRisk(String text, String therapeuticClass, Double minRiskScore, String sortDirection, int page, int size) throws IOException {
+        String cacheKey = buildCacheKey("analytics:drug-risk",
+                text, therapeuticClass,
+                minRiskScore != null ? minRiskScore.toString() : null,
+                sortDirection, String.valueOf(page), String.valueOf(size));
         var cached = redis.get(cacheKey);
         if (cached.isPresent()) {
+            redis.recordCacheHit("analytics:drug-risk");
             return objectMapper.readTree(cached.get());
         }
+        redis.recordCacheMiss("analytics:drug-risk");
 
         List<Object> filters = new ArrayList<>();
         if (therapeuticClass != null && !therapeuticClass.isBlank()) {
@@ -49,27 +54,44 @@ public class AnalyticsService {
             bool.put("must", List.of(Map.of("match_all", Map.of())));
         }
 
-        Map<String, Object> body = Map.of(
-                "size", 20,
-                "query", Map.of("bool", bool),
-                "sort", List.of(Map.of("riskScore", Map.of("order", normalizeSort(sortDirection)))),
-                "aggs", Map.of(
-                        "by_prescription_type", Map.of("terms", Map.of("field", "prescriptionType")),
-                        "avg_risk_score", Map.of("avg", Map.of("field", "riskScore")),
-                        "reported_cases_stats", Map.of("stats", Map.of("field", "reportedCases"))
-                )
-        );
+        Map<String, Object> highlight = new LinkedHashMap<>();
+        highlight.put("pre_tags", List.of("<em>"));
+        highlight.put("post_tags", List.of("</em>"));
+        highlight.put("fields", Map.of(
+                "name", Map.of(),
+                "description", Map.of("fragment_size", 150, "number_of_fragments", 2),
+                "commonSideEffects", Map.of()
+        ));
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("from", page * size);
+        body.put("size", size);
+        body.put("query", Map.of("bool", bool));
+        body.put("sort", List.of(Map.of("riskScore", Map.of("order", normalizeSort(sortDirection)))));
+        body.put("highlight", highlight);
+        body.put("aggs", Map.of(
+                "by_prescription_type", Map.of("terms", Map.of("field", "prescriptionType")),
+                "avg_risk_score", Map.of("avg", Map.of("field", "riskScore")),
+                "reported_cases_stats", Map.of("stats", Map.of("field", "reportedCases"))
+        ));
+
         JsonNode response = elasticsearch.search(ElasticsearchDocumentService.DRUGS_INDEX, body);
         redis.put(cacheKey, objectMapper.writeValueAsString(response), 300);
         return response;
     }
 
-    public JsonNode reportsByRegion(String region, String severity, LocalDate from, LocalDate to) throws IOException {
-        String cacheKey = "analytics:reports-region:" + region + ":" + severity + ":" + from + ":" + to;
+    public JsonNode reportsByRegion(String region, String severity, LocalDate from, LocalDate to, int page, int size) throws IOException {
+        String cacheKey = buildCacheKey("analytics:reports-region",
+                region, severity,
+                from != null ? from.toString() : null,
+                to != null ? to.toString() : null,
+                String.valueOf(page), String.valueOf(size));
         var cached = redis.get(cacheKey);
         if (cached.isPresent()) {
+            redis.recordCacheHit("analytics:reports-region");
             return objectMapper.readTree(cached.get());
         }
+        redis.recordCacheMiss("analytics:reports-region");
 
         List<Object> filters = new ArrayList<>();
         if (region != null && !region.isBlank()) {
@@ -89,27 +111,33 @@ public class AnalyticsService {
             filters.add(Map.of("range", Map.of("eventDate", range)));
         }
 
-        Map<String, Object> body = Map.of(
-                "size", 20,
-                "query", Map.of("bool", Map.of("filter", filters)),
-                "sort", List.of(Map.of("eventDate", Map.of("order", "desc"))),
-                "aggs", Map.of(
-                        "by_severity", Map.of("terms", Map.of("field", "severity")),
-                        "avg_patient_age", Map.of("avg", Map.of("field", "patientAge")),
-                        "hospitalization_rate", Map.of("terms", Map.of("field", "hospitalizationRequired"))
-                )
-        );
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("from", page * size);
+        body.put("size", size);
+        body.put("query", Map.of("bool", Map.of("filter", filters)));
+        body.put("sort", List.of(Map.of("eventDate", Map.of("order", "desc"))));
+        body.put("aggs", Map.of(
+                "by_severity", Map.of("terms", Map.of("field", "severity")),
+                "avg_patient_age", Map.of("avg", Map.of("field", "patientAge")),
+                "hospitalization_rate", Map.of("terms", Map.of("field", "hospitalizationRequired"))
+        ));
+
         JsonNode response = elasticsearch.search(ElasticsearchDocumentService.REPORTS_INDEX, body);
         redis.put(cacheKey, objectMapper.writeValueAsString(response), 300);
         return response;
     }
 
-    public JsonNode manufacturerSafety(String manufacturer, String reactionType, Integer minReports) throws IOException {
-        String cacheKey = "analytics:manufacturer-safety:" + manufacturer + ":" + reactionType + ":" + minReports;
+    public JsonNode manufacturerSafety(String manufacturer, String reactionType, Integer minReports, int page, int size) throws IOException {
+        String cacheKey = buildCacheKey("analytics:manufacturer-safety",
+                manufacturer, reactionType,
+                minReports != null ? minReports.toString() : null,
+                String.valueOf(page), String.valueOf(size));
         var cached = redis.get(cacheKey);
         if (cached.isPresent()) {
+            redis.recordCacheHit("analytics:manufacturer-safety");
             return objectMapper.readTree(cached.get());
         }
+        redis.recordCacheMiss("analytics:manufacturer-safety");
 
         List<Object> filters = new ArrayList<>();
         if (manufacturer != null && !manufacturer.isBlank()) {
@@ -122,16 +150,17 @@ public class AnalyticsService {
             filters.add(Map.of("term", Map.of("commonSideEffects", reactionType)));
         }
 
-        Map<String, Object> body = Map.of(
-                "size", 20,
-                "query", Map.of("bool", Map.of("filter", filters)),
-                "sort", List.of(Map.of("reportedCases", Map.of("order", "desc"))),
-                "aggs", Map.of(
-                        "by_therapeutic_class", Map.of("terms", Map.of("field", "therapeuticClass")),
-                        "avg_risk_score", Map.of("avg", Map.of("field", "riskScore")),
-                        "top_reported_drugs", Map.of("terms", Map.of("field", "name.keyword", "size", 10))
-                )
-        );
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("from", page * size);
+        body.put("size", size);
+        body.put("query", Map.of("bool", Map.of("filter", filters)));
+        body.put("sort", List.of(Map.of("reportedCases", Map.of("order", "desc"))));
+        body.put("aggs", Map.of(
+                "by_therapeutic_class", Map.of("terms", Map.of("field", "therapeuticClass")),
+                "avg_risk_score", Map.of("avg", Map.of("field", "riskScore")),
+                "top_reported_drugs", Map.of("terms", Map.of("field", "name.keyword", "size", 10))
+        ));
+
         JsonNode response = elasticsearch.search(ElasticsearchDocumentService.DRUGS_INDEX, body);
         redis.put(cacheKey, objectMapper.writeValueAsString(response), 300);
         return response;
@@ -139,5 +168,13 @@ public class AnalyticsService {
 
     private String normalizeSort(String sortDirection) {
         return "asc".equalsIgnoreCase(sortDirection) ? "asc" : "desc";
+    }
+
+    private String buildCacheKey(String prefix, String... parts) {
+        StringBuilder sb = new StringBuilder(prefix);
+        for (String part : parts) {
+            sb.append(":").append(part != null && !part.isBlank() ? part : "_");
+        }
+        return sb.toString();
     }
 }

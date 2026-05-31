@@ -31,14 +31,26 @@ public class DataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        elasticsearch.createIndexIfMissing(ElasticsearchDocumentService.DRUGS_INDEX, elasticsearch.drugIndexMapping());
-        elasticsearch.createIndexIfMissing(ElasticsearchDocumentService.REPORTS_INDEX, elasticsearch.reportIndexMapping());
+        waitForElasticsearch();
+        elasticsearch.forceCreateIndex(ElasticsearchDocumentService.DRUGS_INDEX, elasticsearch.drugIndexMapping());
+        elasticsearch.forceCreateIndex(ElasticsearchDocumentService.REPORTS_INDEX, elasticsearch.reportIndexMapping());
 
-        if (elasticsearch.count(ElasticsearchDocumentService.DRUGS_INDEX) < 1000) {
-            seedDrugs();
-        }
-        if (elasticsearch.count(ElasticsearchDocumentService.REPORTS_INDEX) < 1000) {
-            seedReports();
+        seedDrugs();
+        seedReports();
+    }
+
+    private void waitForElasticsearch() throws Exception {
+        int maxAttempts = 30;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                elasticsearch.count(ElasticsearchDocumentService.DRUGS_INDEX);
+                return;
+            } catch (Exception ex) {
+                if (attempt == maxAttempts) {
+                    throw ex;
+                }
+                Thread.sleep(2000);
+            }
         }
     }
 
