@@ -1,5 +1,3 @@
-version: "3.3" # Defines the Docker Compose file format version
-
 services:
   # Service Discovery: Keeps track of all microservices
   eureka-server:
@@ -25,7 +23,10 @@ services:
       # Key-Value pairs used to configure the application environment at runtime
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
     depends_on: # Ensures this service starts only after the listed services are running
-      - eureka-server
+      eureka-server:
+        condition: service_healthy
+      sales-analytics-service:
+        condition: service_healthy
     ports:
       - "9003:9000"
 
@@ -216,6 +217,34 @@ services:
       SPRING_INFLUX_BUCKET: nais_bucket
     ports:
       - "9080:8080"
+
+  sales-analytics-service:
+    build:
+      context: ./SalesAnalyticsService
+      dockerfile: Dockerfile
+    image: sales-analytics-service:latest
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      SPRING_INFLUX_URL: http://influxdb:8086
+      SPRING_INFLUX_TOKEN: my-super-secret-auth-token
+      SPRING_INFLUX_ORG: nais_org
+      SPRING_INFLUX_BUCKET: nais_bucket
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+    ports:
+      - "9090:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/sales-analytics/analytics/stage-bottlenecks"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
 
   influxdb:
     image: influxdb:2.7.6
