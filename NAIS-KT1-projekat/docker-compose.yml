@@ -65,6 +65,29 @@ services:
       - "9061:8080"
     restart: on-failure
 
+  adverse-effects-search-service:
+    build:
+      context: ./AdverseEffectsSearchService
+      dockerfile: Dockerfile
+    image: adverse-effects-search-service:latest
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      ELASTICSEARCH_HOST: elasticsearch
+      ELASTICSEARCH_PORT: 9200
+      ELASTICSEARCH_SCHEME: http
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+    ports:
+      - "9062:8080"
+    restart: on-failure
+
   neo4j:
     image: neo4j:5
     container_name: nais-neo4j
@@ -80,6 +103,37 @@ services:
       interval: 20s
       timeout: 10s
       retries: 5
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.2
+    container_name: nais-elasticsearch
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_adverse_effects_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: nais-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_adverse_effects_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   etcd:
     container_name: milvus-etcd
     image: quay.io/coreos/etcd:v3.5.25
@@ -199,3 +253,5 @@ services:
 volumes: # Declares named volumes for persistent data storage across container restarts
   ollama_data: {}
   neo4j_sales_data: {}
+  elasticsearch_adverse_effects_data: {}
+  redis_adverse_effects_data: {}

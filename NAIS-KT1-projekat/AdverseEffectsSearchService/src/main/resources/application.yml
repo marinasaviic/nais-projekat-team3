@@ -1,0 +1,22 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: adverse-effects-search-service
+  data:
+    redis:
+      host: redis
+      port: 6379
+
+elasticsearch:
+  host: elasticsearch
+  port: 9200
+  scheme: http
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+  instance:
+    prefer-ip-address: true

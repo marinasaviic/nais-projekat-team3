@@ -28,5 +28,10 @@ spring:
             - Path=/vector-database-service/**
           filters:
             - StripPrefix=1
+        - id: adverse-effects-search-service
+          uri: lb://adverse-effects-search-service
+          predicates:
+            - Path=/adverse-effects-search-service/**
+          filters:
+            - StripPrefix=1
         
-
