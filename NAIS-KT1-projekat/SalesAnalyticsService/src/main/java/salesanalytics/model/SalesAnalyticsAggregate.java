@@ -1,8 +1,11 @@
 package salesanalytics.model;
 
+import java.io.Serializable;
 import java.time.Instant;
 
-public class SalesAnalyticsAggregate {
+public class SalesAnalyticsAggregate implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private String groupKey;
     private String metric;

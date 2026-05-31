@@ -1,5 +1,3 @@
-version: "3.3" # Defines the Docker Compose file format version
-
 services:
   # Service Discovery: Keeps track of all microservices
   eureka-server:

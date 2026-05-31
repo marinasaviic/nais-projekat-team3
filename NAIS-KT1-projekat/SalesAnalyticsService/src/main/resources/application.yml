@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: sales-analytics-service
+  cache:
+    type: redis
   influx:
     token: ${SPRING_INFLUX_TOKEN:my-super-secret-auth-token}
     bucket: ${SPRING_INFLUX_BUCKET:nais_bucket}
@@ -13,6 +15,7 @@ spring:
     redis:
       host: ${SPRING_REDIS_HOST:redis}
       port: ${SPRING_REDIS_PORT:6379}
+  
 
 eureka:
   client:
