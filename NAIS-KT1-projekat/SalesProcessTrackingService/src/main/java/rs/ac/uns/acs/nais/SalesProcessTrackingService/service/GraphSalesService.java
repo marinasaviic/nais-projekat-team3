@@ -208,4 +208,20 @@ public class GraphSalesService {
     public List<String> countProcessesByStatusAndStage() {
         return salesProcessRepository.countProcessesByStatusAndStage();
     }
+
+    public List<String> findActiveProcessesWithCustomerRepresentativeAndStage() {
+        return salesProcessRepository.findActiveProcessesWithCustomerRepresentativeAndStage();
+    }
+
+    public List<String> countProcessesByRepresentativeCityAndStage() {
+        return salesProcessRepository.countProcessesByRepresentativeCityAndStage();
+    }
+
+    public List<String> findStagePathsFromQualification() {
+        return salesProcessRepository.findStagePathsFromQualification();
+    }
+
+    public List<String> findProcessesInImportantSalesStages() {
+        return salesProcessRepository.findProcessesInImportantSalesStages();
+    }
 }

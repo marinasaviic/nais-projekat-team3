@@ -1,4 +1,4 @@
-# NAIS KT1 Projekat
+# NAIS Projekat
 
 ## Tim
 - Emilija Simic RA 3/2022
@@ -15,11 +15,14 @@ Projekat se sastoji iz sledećih servisa:
 - Eureka Service (service discovery)
 - Gateway Service (API gateway)
 - Graph Database Service
-- Vector Database Service
+- Time Series Database Service
 
 ## Baze podataka
 - Graf baza: Neo4j
-- Vektorska baza: Milvus
+- Baza vremenskih nizova: InfluxDB
 
 ## Pokretanje projekta
 docker compose up --build
+
+## TSDB
+Time Series servis je dostupan preko `/timeseries/**` i podržava unos, brisanje, osnovne upite i seedovanje test podataka preko `POST /timeseries/seed?count=2000`.

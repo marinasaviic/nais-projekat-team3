@@ -38,11 +38,11 @@ services:
     depends_on:
       eureka-server:
         condition: service_healthy
-      neo4j:
+      sales-neo4j:
         condition: service_healthy
-    environment:
+    environment:      
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
-      SPRING_NEO4J_URI: bolt://neo4j:7687
+      SPRING_NEO4J_URI: bolt://sales-neo4j:7687      
       SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
       SPRING_NEO4J_AUTHENTICATION_PASSWORD: salescrm123
     ports:
@@ -55,147 +55,124 @@ services:
       dockerfile: Dockerfile
     image: collaborative-pricelist-service:latest
     depends_on:
-      neo4j:
+      collaborative-pricelist-neo4j:
+        condition: service_healthy
+      eureka-server:
         condition: service_healthy
     environment:
-      SPRING_NEO4J_URI: bolt://neo4j:7687
+      SPRING_NEO4J_URI: bolt://collaborative-pricelist-neo4j:7687
       SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
-      SPRING_NEO4J_AUTHENTICATION_PASSWORD: salescrm123
+      SPRING_NEO4J_AUTHENTICATION_PASSWORD: collaborative123
     ports:
       - "9061:8080"
     restart: on-failure
 
-  neo4j:
+  product-portfolio-service:
+    build:
+      context: ./ProductPortfolioService
+      dockerfile: Dockerfile
+    image: product-portfolio-service:latest
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      portfolio-neo4j:
+        condition: service_healthy
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      SPRING_NEO4J_URI: bolt://portfolio-neo4j:7687
+      SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
+      SPRING_NEO4J_AUTHENTICATION_PASSWORD: portfolio123
+    ports:
+      - "9070:8080"
+    restart: on-failure
+
+  sales-neo4j:
     image: neo4j:5
-    container_name: nais-neo4j
+    container_name: sales-neo4j
     ports:
       - "7474:7474"
       - "7687:7687"
     environment:
       NEO4J_AUTH: neo4j/salescrm123
     volumes:
-      - neo4j_sales_data:/data
+      - sales_neo4j_data:/data
     healthcheck:
       test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "salescrm123", "RETURN 1"]
       interval: 20s
       timeout: 10s
+      retries: 5 
+
+  collaborative-pricelist-neo4j:
+    image: neo4j:5
+    container_name: collaborative-pricelist-neo4j
+    ports:
+      - "7476:7474"
+      - "7689:7687"
+    environment:
+      NEO4J_AUTH: neo4j/collaborative123
+    volumes:
+      - collaborative_pricelist_data:/data
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "collaborative123", "RETURN 1"]
+      interval: 20s
+      timeout: 20s
+      retries: 5     
+
+  portfolio-neo4j:
+    image: neo4j:5
+    container_name: portfolio-neo4j
+    ports:
+      - "7475:7474"
+      - "7688:7687"
+    environment:
+      NEO4J_AUTH: neo4j/portfolio123
+    volumes:
+      - portfolio_neo4j_data:/data
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "portfolio123", "RETURN 1"]
+      interval: 20s
+      timeout: 10s
       retries: 5
-  etcd:
-    container_name: milvus-etcd
-    image: quay.io/coreos/etcd:v3.5.25
-    environment:
-      - ETCD_AUTO_COMPACTION_MODE=revision
-      - ETCD_AUTO_COMPACTION_RETENTION=1000
-      - ETCD_QUOTA_BACKEND_BYTES=4294967296
-      - ETCD_SNAPSHOT_COUNT=50000
-    volumes:
-      - ./VectorDatabaseService/volumes/etcd:/etcd
-    command: etcd -advertise-client-urls=http://etcd:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
-    healthcheck:
-      test: ["CMD", "etcdctl", "endpoint", "health"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
 
-  minio:
-    container_name: milvus-minio
-    image: minio/minio:RELEASE.2024-12-18T13-15-44Z
-    environment:
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin
-    ports:
-      - "9001:9001"
-      - "9000:9000"
-    volumes:
-      - ./VectorDatabaseService/volumes/minio:/minio_data
-    command: minio server /minio_data --console-address ":9001"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
-
-  standalone:
-    container_name: milvus-standalone
-    image: milvusdb/milvus:v2.6.13
-    command: ["milvus", "run", "standalone"]
-    security_opt: # Configures security settings (e.g., bypassing kernel restrictions)
-      - seccomp:unconfined
-    environment:
-      ETCD_ENDPOINTS: etcd:2379
-      MINIO_ADDRESS: minio:9000
-      MQ_TYPE: woodpecker
-    volumes:
-      - ./VectorDatabaseService/volumes/milvus:/var/lib/milvus
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
-    ports:
-      - "19530:19530"
-      - "9091:9091"
-    depends_on:
-      - etcd
-      - minio
-
-  attu:
-    image: zilliz/attu:v2.4
-    container_name: attu
-    environment:
-      MILVUS_URL: standalone:19530
-    ports:
-      - "8090:3000"
-    depends_on:
-      - standalone
-
-  ollama:
-    image: ollama/ollama:latest
-    container_name: ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:11434 || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-
-  vector-database-service:
+  timeseries-service:
     build:
-      context: ./VectorDatabaseService
+      context: ./TimeseriesDatabaseService
       dockerfile: Dockerfile
-    image: vector-database-service:latest
-    restart: on-failure
+    image: timeseries-service:latest
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
-      MILVUS_HOST: standalone
-      MILVUS_PORT: 19530
-      OLLAMA_URL: http://ollama:11434
-      OLLAMA_MODEL: qwen2.5:1.5b
+      SPRING_INFLUX_URL: http://influxdb:8086
+      SPRING_INFLUX_TOKEN: my-super-secret-auth-token
+      SPRING_INFLUX_ORG: nais_org
+      SPRING_INFLUX_BUCKET: nais_bucket
     ports:
-      - "8000:8000"
+      - "9080:8080"
+
+  influxdb:
+    image: influxdb:2.7.6
+    ports:
+      - "8086:8086"
     volumes:
-      - ./VectorDatabaseService/data:/app/data:ro # ':ro' makes the volume Read-Only inside the container
-    depends_on:
-      - eureka-server
-      - standalone
-      - ollama
-
-  streamlit:
-    build:
-      context: ./VectorDatabaseService
-      dockerfile: Dockerfile.streamlit
-    container_name: streamlit
-    ports:
-      - "8501:8501"
+      - influxdb_data:/var/lib/influxdb2
     environment:
-      API_URL: "http://vector-database-service:8000"
-    depends_on:
-      - vector-database-service
-    restart: on-failure
-
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: nais
+      DOCKER_INFLUXDB_INIT_PASSWORD: password
+      DOCKER_INFLUXDB_INIT_ORG: nais_org
+      DOCKER_INFLUXDB_INIT_BUCKET: nais_bucket
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: my-super-secret-auth-token
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 volumes: # Declares named volumes for persistent data storage across container restarts
-  ollama_data: {}
-  neo4j_sales_data: {}
+  sales_neo4j_data: {}
+  portfolio_neo4j_data: {}
+  collaborative_pricelist_data: {}
+  influxdb_data: {}
