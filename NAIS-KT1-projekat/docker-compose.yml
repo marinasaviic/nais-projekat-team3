@@ -65,7 +65,7 @@ services:
       SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
       SPRING_NEO4J_AUTHENTICATION_PASSWORD: collaborative123
     ports:
-      - "9061:8080"
+      - "9061:8090"
     restart: on-failure
 
   product-portfolio-service:
