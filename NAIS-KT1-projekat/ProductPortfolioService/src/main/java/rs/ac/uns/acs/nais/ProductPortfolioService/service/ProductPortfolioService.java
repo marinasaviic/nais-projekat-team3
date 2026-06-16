@@ -370,6 +370,22 @@ public class ProductPortfolioService {
         return categoryRepository.removeSubcategoryRelation(childCategoryId, parentCategoryId);
     }
 
+    public List<ProductSummaryDto> getActiveProductSummaries() {
+    return productRepository.findAll().stream()
+            .filter(product -> product.getLifecycleStatus() != null)
+            .filter(product -> "ACTIVE".equalsIgnoreCase(product.getLifecycleStatus().getName()))
+            .map(product -> new ProductSummaryDto(
+                    product.getId(),
+                    product.getName(),
+                    product.getCode(),
+                    product.getCategory() != null ? product.getCategory().getId() : null,
+                    product.getCategory() != null ? product.getCategory().getName() : null,
+                    product.getLifecycleStatus() != null ? product.getLifecycleStatus().getId() : null,
+                    product.getLifecycleStatus() != null ? product.getLifecycleStatus().getName() : null
+            ))
+            .toList();
+    }
+
     // QUERIES
 
     public List<String> countProductsByCategory() {

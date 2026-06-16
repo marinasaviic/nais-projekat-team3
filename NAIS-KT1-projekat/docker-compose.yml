@@ -299,6 +299,19 @@ services:
       timeout: 5s
       retries: 5
 
+  grafana:
+    image: grafana/grafana:latest
+    container_name: nais-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_INSTALL_PLUGINS: yesoreyeram-infinity-datasource
+    depends_on:
+      - product-portfolio-service
+      - search-analytics-service
+
 volumes:
   sales_neo4j_data: {}
   portfolio_neo4j_data: {}

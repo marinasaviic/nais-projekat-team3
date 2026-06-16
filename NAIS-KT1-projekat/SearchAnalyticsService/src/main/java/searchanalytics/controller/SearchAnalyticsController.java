@@ -95,4 +95,16 @@ public class SearchAnalyticsController {
     public SearchResponse portfolioRiskSearch(@RequestBody PortfolioRiskSearchRequest request) throws IOException {
         return searchAnalyticsService.portfolioRiskSearch(request);
     }
+
+    @GetMapping("/reports/variants-by-market")
+        public java.util.List<VariantReportDto> getVariantsByMarketReport(
+                @RequestParam(defaultValue = "Serbia") String market
+        ) throws IOException {
+            return searchAnalyticsService.getVariantsByMarketReport(market);
+        }
+
+        @GetMapping("/reports/market-availability")
+        public java.util.List<MarketAvailabilityReportDto> getMarketAvailabilityReport() throws IOException {
+            return searchAnalyticsService.getMarketAvailabilityReport();
+        }
 }
