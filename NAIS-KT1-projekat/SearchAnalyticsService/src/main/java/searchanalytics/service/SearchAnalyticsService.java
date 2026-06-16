@@ -173,6 +173,82 @@ public class SearchAnalyticsService {
     return elasticsearch.search(variantsIndex, body);
     }
 
+    public List<VariantReportDto> getVariantsByMarketReport(String market) throws IOException {
+        MarketAvailabilitySearchRequest request = new MarketAvailabilitySearchRequest();
+        request.setMarket(market);
+        request.setSortBy("availableQuantity");
+        request.setSortDirection("desc");
+        request.setPage(0);
+        request.setSize(50);
+
+        SearchResponse response = marketAvailabilitySearch(request);
+
+        return response.getHits().stream()
+                .map(hit -> (Map<String, Object>) hit)
+                .map(hit -> new VariantReportDto(
+                        valueAsString(hit.get("variantId")),
+                        valueAsString(hit.get("productId")),
+                        valueAsString(hit.get("productName")),
+                        valueAsString(hit.get("name")),
+                        valueAsString(hit.get("market")),
+                        valueAsBigDecimal(hit.get("price")),
+                        valueAsInteger(hit.get("availableQuantity"))
+                ))
+                .toList();
+    }
+
+    public List<MarketAvailabilityReportDto> getMarketAvailabilityReport() throws IOException {
+        PortfolioRiskSearchRequest request = new PortfolioRiskSearchRequest();
+        request.setSortBy("availableQuantity");
+        request.setSortDirection("asc");
+        request.setPage(0);
+        request.setSize(0);
+
+        SearchResponse response = portfolioRiskSearch(request);
+
+        Map<String, Object> aggregations = response.getAggregations();
+        Map<String, Object> riskByMarket = (Map<String, Object>) aggregations.get("risk_by_market");
+        List<Map<String, Object>> buckets = (List<Map<String, Object>>) riskByMarket.get("buckets");
+
+        return buckets.stream()
+                .map(bucket -> {
+                    Map<String, Object> avgPrice = (Map<String, Object>) bucket.get("avg_price");
+                    Map<String, Object> totalAvailableQuantity = (Map<String, Object>) bucket.get("total_available_quantity");
+                    Map<String, Object> minAvailableQuantity = (Map<String, Object>) bucket.get("min_available_quantity");
+
+                    return new MarketAvailabilityReportDto(
+                            valueAsString(bucket.get("key")),
+                            valueAsDouble(avgPrice.get("value")),
+                            valueAsDouble(totalAvailableQuantity.get("value")),
+                            valueAsDouble(minAvailableQuantity.get("value"))
+                    );
+                })
+                .toList();
+    }
+
+    private String valueAsString(Object value) {
+        return value == null ? null : value.toString();
+    }
+
+    private java.math.BigDecimal valueAsBigDecimal(Object value) {
+        if (value == null) return null;
+        if (value instanceof java.math.BigDecimal bigDecimal) return bigDecimal;
+        if (value instanceof Number number) return java.math.BigDecimal.valueOf(number.doubleValue());
+        return new java.math.BigDecimal(value.toString());
+    }
+
+    private Integer valueAsInteger(Object value) {
+        if (value == null) return null;
+        if (value instanceof Number number) return number.intValue();
+        return Integer.parseInt(value.toString());
+    }
+
+    private Double valueAsDouble(Object value) {
+        if (value == null) return null;
+        if (value instanceof Number number) return number.doubleValue();
+        return Double.parseDouble(value.toString());
+    }
+
 
     public SearchResponse getAllProducts(int page, int size) throws IOException {
         return elasticsearch.search(productsIndex, Map.of("track_total_hits", true, "from", page * size, "size", size, "query", Map.of("match_all", Map.of())));
