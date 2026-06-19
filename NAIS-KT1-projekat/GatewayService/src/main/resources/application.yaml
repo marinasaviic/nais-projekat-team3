@@ -32,6 +32,11 @@ spring:
           filters:
             - StripPrefix=1
 
+        - id: collaborative-pricelist-saga-service
+          uri: lb://collaborative-pricelist-service
+          predicates:
+            - Path=/collaborative-pricelists/**
+
         - id: timeseries-service
           uri: lb://timeseries-service
           predicates:
