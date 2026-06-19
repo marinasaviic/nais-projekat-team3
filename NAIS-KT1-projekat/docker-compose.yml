@@ -60,10 +60,14 @@ services:
         condition: service_healthy
       eureka-server:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
       SPRING_NEO4J_URI: bolt://collaborative-pricelist-neo4j:7687
       SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
       SPRING_NEO4J_AUTHENTICATION_PASSWORD: collaborative123
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
     ports:
       - "9061:8090"
     restart: on-failure
@@ -221,14 +225,30 @@ services:
         condition: service_healthy
       influxdb:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
       SPRING_INFLUX_URL: http://influxdb:8086
       SPRING_INFLUX_TOKEN: my-super-secret-auth-token
       SPRING_INFLUX_ORG: nais_org
       SPRING_INFLUX_BUCKET: nais_bucket
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
     ports:
       - "9080:8080"
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: nais-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   search-analytics-service:
     build:

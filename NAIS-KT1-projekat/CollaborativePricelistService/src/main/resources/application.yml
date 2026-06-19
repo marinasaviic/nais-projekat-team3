@@ -16,6 +16,11 @@ spring:
     authentication:
       username: neo4j
       password: salescrm123
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:rabbitmq}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:guest}
+    password: ${SPRING_RABBITMQ_PASSWORD:guest}
 
 # Default cache TTL (used by service when setting entries) in seconds
 app:
