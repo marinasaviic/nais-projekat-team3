@@ -26,6 +26,7 @@ spring:
 app:
   cache:
     default-ttl-seconds: 300
+  timeseries-service-url: ${TIMESERIES_SERVICE_URL:http://timeseries-service:8080}
 
 eureka:
   client:

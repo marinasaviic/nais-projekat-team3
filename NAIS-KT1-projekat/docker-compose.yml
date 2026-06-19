@@ -68,6 +68,7 @@ services:
       SPRING_NEO4J_AUTHENTICATION_PASSWORD: collaborative123
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_RABBITMQ_PORT: 5672
+      TIMESERIES_SERVICE_URL: http://timeseries-service:8080
     ports:
       - "9061:8090"
     restart: on-failure
