@@ -37,6 +37,11 @@ spring:
           predicates:
             - Path=/collaborative-pricelists/**
 
+        - id: collaborative-pricelist-report-service
+          uri: lb://collaborative-pricelist-service
+          predicates:
+            - Path=/reports/**
+
         - id: timeseries-pricelist-lifecycle-service
           uri: lb://timeseries-service
           predicates:
