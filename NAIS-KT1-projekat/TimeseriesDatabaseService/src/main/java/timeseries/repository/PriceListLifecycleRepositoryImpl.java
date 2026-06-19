@@ -60,6 +60,43 @@ public class PriceListLifecycleRepositoryImpl implements PriceListLifecycleRepos
     }
 
     @Override
+    public List<PriceListLifecycleEvent> findByFilters(String pricelistId,
+                                                       String userId,
+                                                       String teamId,
+                                                       String operationType,
+                                                       String statusFrom,
+                                                       String statusTo,
+                                                       String from,
+                                                       String to) {
+        InfluxDBClient client = inConn.buildConnection();
+        try {
+            return inConn.findByFilters(client, pricelistId, userId, teamId, operationType, statusFrom, statusTo, from, to);
+        } finally {
+            client.close();
+        }
+    }
+
+    @Override
+    public List<PriceListLifecycleEvent> findByPricelistId(String pricelistId) {
+        InfluxDBClient client = inConn.buildConnection();
+        try {
+            return inConn.findByPricelistId(client, pricelistId);
+        } finally {
+            client.close();
+        }
+    }
+
+    @Override
+    public List<PriceListLifecycleEvent> findActivationEvents() {
+        InfluxDBClient client = inConn.buildConnection();
+        try {
+            return inConn.findActivationEvents(client);
+        } finally {
+            client.close();
+        }
+    }
+
+    @Override
     public int seed(int count) {
         InfluxDBClient client = inConn.buildConnection();
         try {

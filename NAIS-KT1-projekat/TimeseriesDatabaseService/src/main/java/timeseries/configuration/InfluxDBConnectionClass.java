@@ -113,6 +113,43 @@ public class InfluxDBConnectionClass {
         return mapEvents(influxDBClient.getQueryApi(), flux);
     }
 
+    public List<PriceListLifecycleEvent> findByFilters(InfluxDBClient influxDBClient,
+                                                       String pricelistId,
+                                                       String userId,
+                                                       String teamId,
+                                                       String operationType,
+                                                       String statusFrom,
+                                                       String statusTo,
+                                                       String from,
+                                                       String to) {
+        StringBuilder flux = new StringBuilder(String.format(
+                "from(bucket:\"%s\") |> range(start: %s%s) |> filter(fn: (r) => r[\"_measurement\"] == \"%s\") |> pivot(rowKey:[\"_time\"], columnKey:[\"_field\"], valueColumn:\"_value\")",
+                bucket,
+                fluxTime(from, "-365d"),
+                to == null || to.isBlank() ? "" : ", stop: " + fluxTime(to, null),
+                MEASUREMENT));
+        appendStringFilter(flux, "pricelistId", pricelistId);
+        appendStringFilter(flux, "userId", userId);
+        appendStringFilter(flux, "teamId", teamId);
+        appendStringFilter(flux, "operationType", operationType);
+        appendStringFilter(flux, "statusFrom", statusFrom);
+        appendStringFilter(flux, "statusTo", statusTo);
+        flux.append(" |> sort(columns:[\"_time\"]) |> yield(name:\"filtered\")");
+        return mapEvents(influxDBClient.getQueryApi(), flux.toString());
+    }
+
+    public List<PriceListLifecycleEvent> findByPricelistId(InfluxDBClient influxDBClient, String pricelistId) {
+        return findByFilters(influxDBClient, pricelistId, null, null, null, null, null, null, null);
+    }
+
+    public List<PriceListLifecycleEvent> findActivationEvents(InfluxDBClient influxDBClient) {
+        String flux = String.format(
+                "from(bucket:\"%s\") |> range(start: -365d) |> filter(fn: (r) => r[\"_measurement\"] == \"%s\") |> pivot(rowKey:[\"_time\"], columnKey:[\"_field\"], valueColumn:\"_value\") |> filter(fn: (r) => (exists r[\"operationType\"] and r[\"operationType\"] == \"CREATED\") or (exists r[\"statusTo\"] and (r[\"statusTo\"] == \"DRAFT\" or r[\"statusTo\"] == \"ACTIVE\")) or (exists r[\"status_to\"] and (r[\"status_to\"] == \"DRAFT\" or r[\"status_to\"] == \"ACTIVE\"))) |> sort(columns:[\"_time\"]) |> yield(name:\"activation-events\")",
+                bucket,
+                MEASUREMENT);
+        return mapEvents(influxDBClient.getQueryApi(), flux);
+    }
+
     public List<PriceListLifecycleAggregate> averageDraftDurationByTeam(InfluxDBClient influxDBClient) {
         String flux = String.format(
             "from(bucket:\"%s\") |> range(start: -30d) |> filter(fn: (r) => r[\"_measurement\"] == \"%s\") |> pivot(rowKey:[\"_time\"], columnKey:[\"_field\"], valueColumn:\"_value\") |> filter(fn: (r) => r[\"status_to\"] == \"Active\") |> aggregateWindow(every: 1d, fn: mean, column:\"duration_ms\") |> group(columns:[\"team_id\"]) |> sort(columns:[\"_value\"], desc:true) |> yield(name:\"mean\")",
@@ -398,5 +435,26 @@ public class InfluxDBConnectionClass {
 
     private String tagValue(String value, String fallback) {
         return value == null || value.isBlank() ? fallback : value;
+    }
+
+    private void appendStringFilter(StringBuilder flux, String column, String value) {
+        if (value == null || value.isBlank()) {
+            return;
+        }
+        flux.append(String.format(" |> filter(fn: (r) => exists r[\"%s\"] and r[\"%s\"] == \"%s\")", column, column, escapeFluxString(value)));
+    }
+
+    private String fluxTime(String value, String fallback) {
+        if (value == null || value.isBlank()) {
+            return fallback;
+        }
+        if (value.startsWith("-") || value.matches("\\d+[smhdw]")) {
+            return value;
+        }
+        return "time(v: \"" + escapeFluxString(value) + "\")";
+    }
+
+    private String escapeFluxString(String value) {
+        return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }
