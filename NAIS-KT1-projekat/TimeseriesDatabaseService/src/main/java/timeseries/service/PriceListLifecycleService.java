@@ -1,6 +1,7 @@
 package timeseries.service;
 
 import org.springframework.stereotype.Service;
+import timeseries.dto.ActivationDurationResponse;
 import timeseries.dto.AverageActivationTimeResponse;
 import timeseries.dto.PricelistLifecycleEventResponse;
 import timeseries.dto.PricelistLifecycleSummaryResponse;
@@ -129,6 +130,43 @@ public class PriceListLifecycleService {
                 .sorted(Comparator.comparing(AverageActivationTimeResponse::getTeamId)
                         .thenComparing(AverageActivationTimeResponse::getRegion))
                 .collect(Collectors.toList());
+    }
+
+    public List<ActivationDurationResponse> activationDurations(String teamId, String from, String to) {
+        List<PriceListLifecycleEvent> events = priceListLifecycleRepository.findByFilters(
+                null, null, teamId, null, null, null, from, to);
+        Map<String, ActivationStart> startsByPricelist = new HashMap<>();
+        List<ActivationDurationResponse> result = new ArrayList<>();
+
+        events.stream()
+                .filter(event -> event.getTimestamp() != null)
+                .sorted(Comparator.comparing(PriceListLifecycleEvent::getTimestamp))
+                .forEach(event -> {
+                    String pricelistId = firstNonBlank(event.getPricelistId(), event.getPriceListId());
+                    if (pricelistId == null || pricelistId.isBlank()) {
+                        return;
+                    }
+                    String statusTo = firstNonBlank(event.getStatusToTag(), event.getStatusTo());
+                    boolean startsActivation = "CREATED".equalsIgnoreCase(event.getOperationType())
+                            || "DRAFT".equalsIgnoreCase(statusTo);
+                    if (startsActivation) {
+                        startsByPricelist.putIfAbsent(pricelistId, new ActivationStart(event.getTimestamp(), event.getTeamId(), event.getRegion()));
+                        return;
+                    }
+                    if (!"ACTIVE".equalsIgnoreCase(statusTo)) {
+                        return;
+                    }
+                    ActivationStart start = startsByPricelist.get(pricelistId);
+                    if (start == null || event.getTimestamp().isBefore(start.timestamp())) {
+                        return;
+                    }
+                    result.add(new ActivationDurationResponse(
+                            pricelistId,
+                            firstNonBlank(event.getTeamId(), start.teamId(), "none"),
+                            firstNonBlank(event.getRegion(), start.region(), "unknown"),
+                            Duration.between(start.timestamp(), event.getTimestamp()).toMillis()));
+                });
+        return result;
     }
 
     public List<PriceListLifecycleAggregate> averageDraftDurationByTeam() {

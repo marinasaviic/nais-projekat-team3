@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import timeseries.dto.ActivationDurationResponse;
 import timeseries.dto.AverageActivationTimeResponse;
 import timeseries.dto.PricelistLifecycleEventResponse;
 import timeseries.dto.PricelistLifecycleSummaryResponse;
@@ -47,6 +48,31 @@ public class PricelistLifecycleQueryController {
     @GetMapping("/summary")
     public ResponseEntity<PricelistLifecycleSummaryResponse> summary() {
         return ResponseEntity.ok(priceListLifecycleService.lifecycleSummary());
+    }
+
+    @GetMapping("/report-data")
+    public ResponseEntity<List<PricelistLifecycleEventResponse>> reportData(
+            @RequestParam(required = false) String pricelistId,
+            @RequestParam(required = false) String teamId,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to) {
+        return ResponseEntity.ok(priceListLifecycleService.findLifecycleEvents(
+                pricelistId,
+                null,
+                teamId,
+                null,
+                null,
+                null,
+                from,
+                to));
+    }
+
+    @GetMapping("/activation-durations")
+    public ResponseEntity<List<ActivationDurationResponse>> activationDurations(
+            @RequestParam(required = false) String teamId,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to) {
+        return ResponseEntity.ok(priceListLifecycleService.activationDurations(teamId, from, to));
     }
 
     @GetMapping("/average-activation-time")
