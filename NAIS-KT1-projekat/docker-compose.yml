@@ -329,7 +329,4 @@ volumes:
   kibana_data: {}
   redis_adverse_effects_data: {}
   redisinsight_data: {}
-<<<<<<< HEAD
-=======
   grafana_data: {}
->>>>>>> 895fbe38f7a316d8a63faca15760ba9fa9ba522b
