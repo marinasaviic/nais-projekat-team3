@@ -314,6 +314,8 @@ services:
     depends_on:
       - product-portfolio-service
       - search-analytics-service
+    volumes:
+      - grafana_data:/var/lib/grafana
 
 volumes:
   sales_neo4j_data: {}
@@ -323,3 +325,4 @@ volumes:
   elasticsearch_adverse_effects_data: {}
   redis_adverse_effects_data: {}
   redisinsight_data: {}
+  grafana_data: {}
