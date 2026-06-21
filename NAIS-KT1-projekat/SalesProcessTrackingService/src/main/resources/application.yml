@@ -16,3 +16,6 @@ eureka:
       defaultZone: http://eureka-server:8761/eureka/
   instance:
     prefer-ip-address: true
+
+sales-analytics:
+  url: ${SALES_ANALYTICS_URL:http://sales-analytics-service:8080/sales-analytics}

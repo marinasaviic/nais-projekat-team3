@@ -41,11 +41,14 @@ services:
         condition: service_healthy
       sales-neo4j:
         condition: service_healthy
+      sales-analytics-service:
+        condition: service_started
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
       SPRING_NEO4J_URI: bolt://sales-neo4j:7687
       SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
       SPRING_NEO4J_AUTHENTICATION_PASSWORD: salescrm123
+      SALES_ANALYTICS_URL: http://sales-analytics-service:8080/sales-analytics
     ports:
       - "9060:8080"
     restart: on-failure
