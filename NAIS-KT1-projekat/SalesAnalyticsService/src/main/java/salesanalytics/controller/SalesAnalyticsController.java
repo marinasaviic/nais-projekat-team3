@@ -1,22 +1,31 @@
 package salesanalytics.controller;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import salesanalytics.dto.RedisSalesEventView;
+import salesanalytics.dto.TransactionalSalesEventResponse;
 import salesanalytics.model.SalesAnalyticsAggregate;
 import salesanalytics.model.SalesProcessEvent;
 import salesanalytics.service.SalesAnalyticsService;
+import salesanalytics.service.SalesAnalyticsReportService;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/sales-analytics")
 public class SalesAnalyticsController {
 
     private final SalesAnalyticsService salesAnalyticsService;
+    private final SalesAnalyticsReportService reportService;
 
-    public SalesAnalyticsController(SalesAnalyticsService salesAnalyticsService) {
+    public SalesAnalyticsController(SalesAnalyticsService salesAnalyticsService,
+                                    SalesAnalyticsReportService reportService) {
         this.salesAnalyticsService = salesAnalyticsService;
+        this.reportService = reportService;
     }
 
     @GetMapping
@@ -54,6 +63,37 @@ public class SalesAnalyticsController {
         return salesAnalyticsService.save(event)
                 ? new ResponseEntity<>(true, HttpStatus.CREATED)
                 : new ResponseEntity<>(false, HttpStatus.BAD_REQUEST);
+    }
+
+    @PostMapping("/transactions/events")
+    public ResponseEntity<TransactionalSalesEventResponse> createTransactional(
+            @RequestBody SalesProcessEvent event,
+            @RequestParam(defaultValue = "false") boolean simulateRedisFailure) {
+        return new ResponseEntity<>(
+                salesAnalyticsService.createTransactional(event, simulateRedisFailure),
+                HttpStatus.CREATED
+        );
+    }
+
+    @GetMapping("/transactions/redis-events")
+    public ResponseEntity<List<RedisSalesEventView>> latestRedisEvents(@RequestParam(defaultValue = "20") int limit) {
+        return new ResponseEntity<>(salesAnalyticsService.latestRedisEvents(limit), HttpStatus.OK);
+    }
+
+    @GetMapping("/transactions/redis-region-counts")
+    public ResponseEntity<Map<String, Long>> redisRegionCounts() {
+        return new ResponseEntity<>(salesAnalyticsService.redisRegionCounts(), HttpStatus.OK);
+    }
+
+    @GetMapping("/reports/pipeline.pdf")
+    public ResponseEntity<byte[]> pipelineReport(
+            @RequestParam(required = false) String region,
+            @RequestParam(defaultValue = "20") int limit) {
+        byte[] report = reportService.generatePipelineReport(region, limit);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=sales-pipeline-report.pdf")
+                .body(report);
     }
 
     @DeleteMapping
