@@ -1,17 +1,17 @@
+version: "3.3"
+
 services:
-  # Service Discovery: Keeps track of all microservices
   eureka-server:
-    build: # Instructions for building a custom image from a local directory
-      context: ./EurekaService # The directory containing the build files
-      dockerfile: Dockerfile  # The specific file used to build the image
-    image: eureka-server:latest # The name and tag given to the resulting image
-    ports: # Maps host machine ports to container ports (HOST:CONTAINER)
+    build:
+      context: ./EurekaService
+      dockerfile: Dockerfile
+    image: eureka-server:latest
+    ports:
       - "8761:8761"
-    healthcheck: # A test to check if the container is running correctly
-      # test: The actual command executed to verify the container's health
+    healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
-      interval: 20s # How often to run the check
-      timeout: 10s # How long to wait for a response
+      interval: 20s
+      timeout: 10s
       retries: 5
 
   gateway-api:
@@ -19,14 +19,15 @@ services:
       context: ./GatewayService
       dockerfile: Dockerfile
     image: gateway-api:latest
-    environment: # Sets environment variables inside the container
-      # Key-Value pairs used to configure the application environment at runtime
+    environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
-    depends_on: # Ensures this service starts only after the listed services are running
+    depends_on:
       eureka-server:
         condition: service_healthy
       sales-analytics-service:
-        condition: service_healthy
+        condition: service_started
+      search-analytics-service:
+        condition: service_started
     ports:
       - "9003:9000"
 
@@ -64,7 +65,7 @@ services:
       SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
       SPRING_NEO4J_AUTHENTICATION_PASSWORD: collaborative123
     ports:
-      - "9061:8080"
+      - "9061:8090"
     restart: on-failure
 
   product-portfolio-service:
@@ -174,6 +175,17 @@ services:
       interval: 20s
       timeout: 10s
       retries: 10
+  
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.12.2
+    container_name: portfolio-kibana
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    ports:
+      - "5601:5601"
 
   kibana:
     image: docker.elastic.co/kibana/kibana:8.12.2
@@ -232,6 +244,28 @@ services:
     ports:
       - "9080:8080"
 
+  search-analytics-service:
+    build:
+      context: ./SearchAnalyticsService
+      dockerfile: Dockerfile
+    image: search-analytics-service:latest
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      ELASTICSEARCH_HOST: elasticsearch
+      ELASTICSEARCH_PORT: 9200
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+    ports:
+      - "9091:8080"
+    restart: on-failure
+
   sales-analytics-service:
     build:
       context: ./SalesAnalyticsService
@@ -279,7 +313,20 @@ services:
       timeout: 5s
       retries: 5
 
-volumes: # Declares named volumes for persistent data storage across container restarts
+  grafana:
+    image: grafana/grafana:latest
+    container_name: nais-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_INSTALL_PLUGINS: yesoreyeram-infinity-datasource
+    depends_on:
+      - product-portfolio-service
+      - search-analytics-service
+
+volumes:
   sales_neo4j_data: {}
   portfolio_neo4j_data: {}
   collaborative_pricelist_data: {}

@@ -1,6 +1,8 @@
 package rs.ac.uns.acs.nais.ProductPortfolioService.controller;
 
 import org.springframework.web.bind.annotation.*;
+
+import rs.ac.uns.acs.nais.ProductPortfolioService.dto.ProductSummaryDto;
 import rs.ac.uns.acs.nais.ProductPortfolioService.service.ProductPortfolioService;
 
 import java.util.List;
@@ -38,5 +40,10 @@ public class ProductPortfolioQueryController {
     @GetMapping("/active-products-by-category-and-market")
     public List<String> countActiveProductsByCategoryAndMarket() {
         return productPortfolioService.countActiveProductsByCategoryAndMarket();
+    }
+
+    @GetMapping("/reports/active-products")
+        public List<ProductSummaryDto> getActiveProductsReport() {
+        return productPortfolioService.getActiveProductSummaries();
     }
 }
