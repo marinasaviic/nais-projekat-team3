@@ -71,6 +71,8 @@ public class SagaOrchestrator {
             compensateCreatedPricelist(saga);
             return toReply(saga, false, errorMessage);
         } catch (Exception ex) {
+            LOGGER.error("Saga {} failed during pricelist creation positive path; starting compensation",
+                    saga.getSagaId(), ex);
             saga.setErrorMessage(ex.getMessage());
             compensateCreatedPricelist(saga);
             return toReply(saga, false, ex.getMessage());
@@ -114,6 +116,8 @@ public class SagaOrchestrator {
             compensateStatusChange(saga, existingPricelist);
             return toReply(saga, false, errorMessage);
         } catch (Exception ex) {
+            LOGGER.error("Saga {} failed during pricelist status change positive path; starting compensation",
+                    saga.getSagaId(), ex);
             saga.setErrorMessage(ex.getMessage());
             compensateStatusChange(saga, existingPricelist);
             return toReply(saga, false, ex.getMessage());
@@ -146,6 +150,8 @@ public class SagaOrchestrator {
             compensateDeletedPricelist(saga, existingPricelist);
             return toReply(saga, false, errorMessage);
         } catch (Exception ex) {
+            LOGGER.error("Saga {} failed during pricelist delete positive path; starting compensation",
+                    saga.getSagaId(), ex);
             saga.setErrorMessage(ex.getMessage());
             compensateDeletedPricelist(saga, existingPricelist);
             return toReply(saga, false, ex.getMessage());
@@ -206,6 +212,7 @@ public class SagaOrchestrator {
             collaborationGraphService.deletePricelist(saga.getPricelistId());
             transition(saga, SagaState.COMPENSATED, "Created pricelist deleted from Neo4j");
         } catch (Exception compensationError) {
+            LOGGER.error("Saga {} create compensation failed", saga.getSagaId(), compensationError);
             saga.setErrorMessage(joinErrors(saga.getErrorMessage(), compensationError.getMessage()));
             transition(saga, SagaState.FAILED, "Create compensation failed");
         }
@@ -217,6 +224,7 @@ public class SagaOrchestrator {
             collaborationGraphService.updatePricelist(originalPricelist.getId(), originalPricelist);
             transition(saga, SagaState.COMPENSATED, "Pricelist status reverted in Neo4j");
         } catch (Exception compensationError) {
+            LOGGER.error("Saga {} status compensation failed", saga.getSagaId(), compensationError);
             saga.setErrorMessage(joinErrors(saga.getErrorMessage(), compensationError.getMessage()));
             transition(saga, SagaState.FAILED, "Status compensation failed");
         }
@@ -228,6 +236,7 @@ public class SagaOrchestrator {
             collaborationGraphService.createPricelist(deletedPricelist);
             transition(saga, SagaState.COMPENSATED, "Deleted pricelist restored in Neo4j");
         } catch (Exception compensationError) {
+            LOGGER.error("Saga {} delete compensation failed", saga.getSagaId(), compensationError);
             saga.setErrorMessage(joinErrors(saga.getErrorMessage(), compensationError.getMessage()));
             transition(saga, SagaState.FAILED, "Delete compensation failed");
         }
