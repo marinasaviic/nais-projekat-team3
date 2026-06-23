@@ -9,6 +9,11 @@ spring:
     bucket: ${SPRING_INFLUX_BUCKET:team_productivity_tracking}
     org: ${SPRING_INFLUX_ORG:nais_org}
     url: ${SPRING_INFLUX_URL:http://influxdb:8086}
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:rabbitmq}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:guest}
+    password: ${SPRING_RABBITMQ_PASSWORD:guest}
 
 eureka:
   client:

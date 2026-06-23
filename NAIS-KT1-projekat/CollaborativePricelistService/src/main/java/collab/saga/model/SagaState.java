@@ -1,0 +1,13 @@
+package collab.saga.model;
+
+public enum SagaState {
+    STARTED,
+    PRICELIST_CREATED,
+    STATUS_CHANGED,
+    PRICELIST_DELETED,
+    LIFECYCLE_EVENT_WRITTEN,
+    COMPLETED,
+    COMPENSATING,
+    COMPENSATED,
+    FAILED
+}

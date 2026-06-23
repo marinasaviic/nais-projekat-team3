@@ -8,6 +8,12 @@ import java.time.Instant;
 @Measurement(name = "price_list_lifecycle")
 public class PriceListLifecycleEvent {
 
+    @Column(name = "saga_id", tag = true)
+    private String sagaId;
+
+    @Column(name = "pricelistId", tag = true)
+    private String pricelistId;
+
     @Column(name = "price_list_id", tag = true)
     private String priceListId;
 
@@ -26,7 +32,18 @@ public class PriceListLifecycleEvent {
     @Column(name = "user_name", tag = true)
     private String userName;
 
-    // These must be fields (not tags) per spec
+    @Column(name = "region", tag = true)
+    private String region;
+
+    @Column(name = "operationType", tag = true)
+    private String operationType;
+
+    @Column(name = "statusFrom", tag = true)
+    private String statusFromTag;
+
+    @Column(name = "statusTo", tag = true)
+    private String statusToTag;
+
     @Column(name = "status_from")
     private String statusFrom;
 
@@ -39,10 +56,32 @@ public class PriceListLifecycleEvent {
     @Column(name = "duration_ms")
     private Double durationMs;
 
+    @Column(name = "success")
+    private Boolean success;
+
+    @Column(name = "error_message")
+    private String errorMessage;
+
     @Column(timestamp = true)
     private Instant timestamp;
 
     public PriceListLifecycleEvent() {
+    }
+
+    public String getSagaId() {
+        return sagaId;
+    }
+
+    public void setSagaId(String sagaId) {
+        this.sagaId = sagaId;
+    }
+
+    public String getPricelistId() {
+        return pricelistId;
+    }
+
+    public void setPricelistId(String pricelistId) {
+        this.pricelistId = pricelistId;
     }
 
     public String getPriceListId() {
@@ -93,6 +132,38 @@ public class PriceListLifecycleEvent {
         this.userName = userName;
     }
 
+    public String getRegion() {
+        return region;
+    }
+
+    public void setRegion(String region) {
+        this.region = region;
+    }
+
+    public String getOperationType() {
+        return operationType;
+    }
+
+    public void setOperationType(String operationType) {
+        this.operationType = operationType;
+    }
+
+    public String getStatusFromTag() {
+        return statusFromTag;
+    }
+
+    public void setStatusFromTag(String statusFromTag) {
+        this.statusFromTag = statusFromTag;
+    }
+
+    public String getStatusToTag() {
+        return statusToTag;
+    }
+
+    public void setStatusToTag(String statusToTag) {
+        this.statusToTag = statusToTag;
+    }
+
     public String getStatusFrom() {
         return statusFrom;
     }
@@ -123,6 +194,22 @@ public class PriceListLifecycleEvent {
 
     public void setDurationMs(Double durationMs) {
         this.durationMs = durationMs;
+    }
+
+    public Boolean getSuccess() {
+        return success;
+    }
+
+    public void setSuccess(Boolean success) {
+        this.success = success;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
     }
 
     public Instant getTimestamp() {

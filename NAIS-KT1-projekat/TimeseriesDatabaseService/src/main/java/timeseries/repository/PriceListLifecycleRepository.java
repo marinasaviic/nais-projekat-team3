@@ -16,6 +16,20 @@ public interface PriceListLifecycleRepository {
 
     List<PriceListLifecycleEvent> findAllByUserId(String userId);
 
+    List<PriceListLifecycleEvent> findByFilters(
+            String pricelistId,
+            String userId,
+            String teamId,
+            String operationType,
+            String statusFrom,
+            String statusTo,
+            String from,
+            String to);
+
+    List<PriceListLifecycleEvent> findByPricelistId(String pricelistId);
+
+    List<PriceListLifecycleEvent> findActivationEvents();
+
     int seed(int count);
 
     Boolean delete(String priceListId);

@@ -51,17 +51,34 @@ public class InfluxDBConnectionClass {
             if (event.getTimestamp() == null) {
                 event.setTimestamp(Instant.now());
             }
+            String pricelistId = tagValue(firstNonBlank(event.getPricelistId(), event.getPriceListId()), "unknown");
+            String userId = tagValue(event.getUserId(), "unknown");
+            String teamId = tagValue(event.getTeamId(), "none");
+            String region = tagValue(event.getRegion(), "unknown");
+            String operationType = tagValue(event.getOperationType(), "UNKNOWN");
+            String statusFrom = tagValue(firstNonBlank(event.getStatusFromTag(), event.getStatusFrom()), "NONE");
+            String statusTo = tagValue(firstNonBlank(event.getStatusToTag(), event.getStatusTo()), "UNKNOWN");
             Point point = Point.measurement(MEASUREMENT)
-                    .addTag("price_list_id", event.getPriceListId())
-                    .addTag("price_list_name", resolvePriceListName(event.getPriceListId(), event.getPriceListName()))
-                    .addTag("team_id", event.getTeamId())
-                    .addTag("team_name", resolveTeamName(event.getTeamId(), event.getTeamName()))
-                    .addTag("user_id", event.getUserId())
-                    .addTag("user_name", resolveUserName(event.getUserId(), event.getUserName()))
-                    .addTag("transition_label", resolveTransitionLabel(event.getStatusFrom(), event.getStatusTo(), event.getTransitionLabel()))
-                    .addField("status_from", event.getStatusFrom())
-                    .addField("status_to", event.getStatusTo())
-                    .addField("duration_ms", event.getDurationMs())
+                    .addTag("saga_id", tagValue(event.getSagaId(), "unknown"))
+                    .addTag("pricelistId", pricelistId)
+                    .addTag("userId", userId)
+                    .addTag("teamId", teamId)
+                    .addTag("region", region)
+                    .addTag("operationType", operationType)
+                    .addTag("statusFrom", statusFrom)
+                    .addTag("statusTo", statusTo)
+                    .addTag("price_list_id", pricelistId)
+                    .addTag("price_list_name", tagValue(resolvePriceListName(pricelistId, event.getPriceListName()), "unknown"))
+                    .addTag("team_id", teamId)
+                    .addTag("team_name", tagValue(resolveTeamName(teamId, event.getTeamName()), "none"))
+                    .addTag("user_id", userId)
+                    .addTag("user_name", tagValue(resolveUserName(userId, event.getUserName()), "unknown"))
+                    .addTag("transition_label", tagValue(resolveTransitionLabel(statusFrom, statusTo, event.getTransitionLabel()), "UNKNOWN"))
+                    .addField("status_from", statusFrom)
+                    .addField("status_to", statusTo)
+                    .addField("duration_ms", event.getDurationMs() == null ? 0.0 : event.getDurationMs())
+                    .addField("success", event.getSuccess() == null || event.getSuccess())
+                    .addField("error_message", event.getErrorMessage() == null ? "" : event.getErrorMessage())
                     .time(event.getTimestamp(), WritePrecision.MS);
             writeApi.writePoint(point);
             return true;
@@ -93,6 +110,43 @@ public class InfluxDBConnectionClass {
             bucket,
             MEASUREMENT,
             userId);
+        return mapEvents(influxDBClient.getQueryApi(), flux);
+    }
+
+    public List<PriceListLifecycleEvent> findByFilters(InfluxDBClient influxDBClient,
+                                                       String pricelistId,
+                                                       String userId,
+                                                       String teamId,
+                                                       String operationType,
+                                                       String statusFrom,
+                                                       String statusTo,
+                                                       String from,
+                                                       String to) {
+        StringBuilder flux = new StringBuilder(String.format(
+                "from(bucket:\"%s\") |> range(start: %s%s) |> filter(fn: (r) => r[\"_measurement\"] == \"%s\") |> pivot(rowKey:[\"_time\"], columnKey:[\"_field\"], valueColumn:\"_value\")",
+                bucket,
+                fluxTime(from, "-365d"),
+                to == null || to.isBlank() ? "" : ", stop: " + fluxTime(to, null),
+                MEASUREMENT));
+        appendStringFilter(flux, "pricelistId", pricelistId);
+        appendStringFilter(flux, "userId", userId);
+        appendStringFilter(flux, "teamId", teamId);
+        appendStringFilter(flux, "operationType", operationType);
+        appendStringFilter(flux, "statusFrom", statusFrom);
+        appendStringFilter(flux, "statusTo", statusTo);
+        flux.append(" |> sort(columns:[\"_time\"]) |> yield(name:\"filtered\")");
+        return mapEvents(influxDBClient.getQueryApi(), flux.toString());
+    }
+
+    public List<PriceListLifecycleEvent> findByPricelistId(InfluxDBClient influxDBClient, String pricelistId) {
+        return findByFilters(influxDBClient, pricelistId, null, null, null, null, null, null, null);
+    }
+
+    public List<PriceListLifecycleEvent> findActivationEvents(InfluxDBClient influxDBClient) {
+        String flux = String.format(
+                "from(bucket:\"%s\") |> range(start: -365d) |> filter(fn: (r) => r[\"_measurement\"] == \"%s\") |> pivot(rowKey:[\"_time\"], columnKey:[\"_field\"], valueColumn:\"_value\") |> filter(fn: (r) => (exists r[\"operationType\"] and r[\"operationType\"] == \"CREATED\") or (exists r[\"statusTo\"] and (r[\"statusTo\"] == \"DRAFT\" or r[\"statusTo\"] == \"ACTIVE\")) or (exists r[\"status_to\"] and (r[\"status_to\"] == \"DRAFT\" or r[\"status_to\"] == \"ACTIVE\"))) |> sort(columns:[\"_time\"]) |> yield(name:\"activation-events\")",
+                bucket,
+                MEASUREMENT);
         return mapEvents(influxDBClient.getQueryApi(), flux);
     }
 
@@ -238,16 +292,37 @@ public class InfluxDBConnectionClass {
         for (FluxTable table : tables) {
             for (FluxRecord record : table.getRecords()) {
                         PriceListLifecycleEvent event = new PriceListLifecycleEvent();
+                        event.setSagaId(record.getValueByKey("saga_id") == null ? null : record.getValueByKey("saga_id").toString());
+                        event.setPricelistId(record.getValueByKey("pricelistId") == null ? null : record.getValueByKey("pricelistId").toString());
                         event.setPriceListId(record.getValueByKey("price_list_id") == null ? null : record.getValueByKey("price_list_id").toString());
+                        if (event.getPricelistId() == null) {
+                            event.setPricelistId(event.getPriceListId());
+                        }
                         event.setPriceListName(resolvePriceListName(event.getPriceListId(), record.getValueByKey("price_list_name") == null ? null : record.getValueByKey("price_list_name").toString()));
                         event.setTeamId(record.getValueByKey("team_id") == null ? null : record.getValueByKey("team_id").toString());
+                        if (event.getTeamId() == null && record.getValueByKey("teamId") != null) {
+                            event.setTeamId(record.getValueByKey("teamId").toString());
+                        }
                         event.setTeamName(resolveTeamName(event.getTeamId(), record.getValueByKey("team_name") == null ? null : record.getValueByKey("team_name").toString()));
                         event.setUserId(record.getValueByKey("user_id") == null ? null : record.getValueByKey("user_id").toString());
+                        if (event.getUserId() == null && record.getValueByKey("userId") != null) {
+                            event.setUserId(record.getValueByKey("userId").toString());
+                        }
                         event.setUserName(resolveUserName(event.getUserId(), record.getValueByKey("user_name") == null ? null : record.getValueByKey("user_name").toString()));
+                        event.setRegion(record.getValueByKey("region") == null ? null : record.getValueByKey("region").toString());
+                        event.setOperationType(record.getValueByKey("operationType") == null ? null : record.getValueByKey("operationType").toString());
+                        event.setStatusFromTag(record.getValueByKey("statusFrom") == null ? null : record.getValueByKey("statusFrom").toString());
+                        event.setStatusToTag(record.getValueByKey("statusTo") == null ? null : record.getValueByKey("statusTo").toString());
                         Object sf = record.getValueByKey("status_from");
                         if (sf != null) event.setStatusFrom(sf.toString());
+                        if (event.getStatusFrom() == null) {
+                            event.setStatusFrom(event.getStatusFromTag());
+                        }
                         Object st = record.getValueByKey("status_to");
                         if (st != null) event.setStatusTo(st.toString());
+                        if (event.getStatusTo() == null) {
+                            event.setStatusTo(event.getStatusToTag());
+                        }
                         event.setTransitionLabel(resolveTransitionLabel(event.getStatusFrom(), event.getStatusTo(), record.getValueByKey("transition_label") == null ? null : record.getValueByKey("transition_label").toString()));
                         Object duration = record.getValueByKey("duration_ms");
                         if (duration instanceof Number number) {
@@ -257,6 +332,16 @@ public class InfluxDBConnectionClass {
                                 event.setDurationMs(Double.parseDouble(duration.toString()));
                             } catch (NumberFormatException ignored) {
                             }
+                        }
+                        Object success = record.getValueByKey("success");
+                        if (success instanceof Boolean booleanValue) {
+                            event.setSuccess(booleanValue);
+                        } else if (success != null) {
+                            event.setSuccess(Boolean.parseBoolean(success.toString()));
+                        }
+                        Object errorMessage = record.getValueByKey("error_message");
+                        if (errorMessage != null) {
+                            event.setErrorMessage(errorMessage.toString());
                         }
                         event.setTimestamp((Instant) record.getValueByKey("_time"));
                 events.add(event);
@@ -339,5 +424,37 @@ public class InfluxDBConnectionClass {
             return null;
         }
         return statusFrom + " -> " + statusTo;
+    }
+
+    private String firstNonBlank(String first, String second) {
+        if (first != null && !first.isBlank()) {
+            return first;
+        }
+        return second;
+    }
+
+    private String tagValue(String value, String fallback) {
+        return value == null || value.isBlank() ? fallback : value;
+    }
+
+    private void appendStringFilter(StringBuilder flux, String column, String value) {
+        if (value == null || value.isBlank()) {
+            return;
+        }
+        flux.append(String.format(" |> filter(fn: (r) => exists r[\"%s\"] and r[\"%s\"] == \"%s\")", column, column, escapeFluxString(value)));
+    }
+
+    private String fluxTime(String value, String fallback) {
+        if (value == null || value.isBlank()) {
+            return fallback;
+        }
+        if (value.startsWith("-") || value.matches("\\d+[smhdw]")) {
+            return value;
+        }
+        return "time(v: \"" + escapeFluxString(value) + "\")";
+    }
+
+    private String escapeFluxString(String value) {
+        return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }
