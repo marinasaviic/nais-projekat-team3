@@ -41,11 +41,14 @@ services:
         condition: service_healthy
       sales-neo4j:
         condition: service_healthy
+      sales-analytics-service:
+        condition: service_started
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
       SPRING_NEO4J_URI: bolt://sales-neo4j:7687
       SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
       SPRING_NEO4J_AUTHENTICATION_PASSWORD: salescrm123
+      SALES_ANALYTICS_URL: http://sales-analytics-service:8080/sales-analytics
     ports:
       - "9060:8080"
     restart: on-failure
@@ -189,8 +192,11 @@ services:
         condition: service_healthy
     environment:
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+      XPACK_SECURITY_ENABLED: "false"
     ports:
       - "5601:5601"
+    volumes:
+      - kibana_data:/usr/share/kibana/data
 
   redis:
     image: redis:7-alpine
@@ -332,6 +338,8 @@ services:
     depends_on:
       - product-portfolio-service
       - search-analytics-service
+    volumes:
+      - grafana_data:/var/lib/grafana
 
 volumes:
   sales_neo4j_data: {}
@@ -339,5 +347,7 @@ volumes:
   collaborative_pricelist_data: {}
   influxdb_data: {}
   elasticsearch_adverse_effects_data: {}
+  kibana_data: {}
   redis_adverse_effects_data: {}
   redisinsight_data: {}
+  grafana_data: {}

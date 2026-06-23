@@ -4,6 +4,8 @@ import org.springframework.web.bind.annotation.*;
 import rs.ac.uns.acs.nais.SalesProcessTrackingService.model.SalesProcess;
 import rs.ac.uns.acs.nais.SalesProcessTrackingService.service.GraphSalesService;
 
+import org.springframework.http.ResponseEntity;
+import java.util.Map;
 import java.util.List;
 
 @RestController
@@ -42,8 +44,14 @@ public class SalesProcessController {
     }
 
     @PostMapping("/{processId}/stage/{stageId}")
-    public void setCurrentStage(@PathVariable String processId, @PathVariable String stageId) {
-        graphSalesService.setCurrentStage(processId, stageId);
+    public ResponseEntity<?> setCurrentStage(@PathVariable String processId, @PathVariable String stageId) {
+        try {
+            return ResponseEntity.ok(graphSalesService.setCurrentStage(processId, stageId));
+        } catch (IllegalStateException ex) {
+            return ResponseEntity.status(409).body(Map.of(
+                    "message", ex.getMessage()
+            ));
+        }
     }
 
     @DeleteMapping("/{processId}/stage")

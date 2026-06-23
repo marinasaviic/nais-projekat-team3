@@ -30,6 +30,42 @@ public interface SalesProcessRepository extends Neo4jRepository<SalesProcess, St
     SalesProcess setCurrentStage(String processId, String stageId);
 
     @Query("""
+        MATCH (sp:SalesProcess {id: $processId})-[:CURRENT_STAGE]->(s:Stage)
+        RETURN s.id
+    """)
+    String findCurrentStageId(String processId);
+
+    @Query("""
+        MATCH (sp:SalesProcess {id: $processId})-[:CURRENT_STAGE]->(s:Stage)
+        RETURN s.name
+    """)
+    String findCurrentStageName(String processId);
+
+    @Query("""
+        MATCH (c:Customer)-[:HAS_PROCESS]->(:SalesProcess {id: $processId})
+        RETURN c.id
+    """)
+    String findCustomerIdForProcess(String processId);
+
+    @Query("""
+        MATCH (c:Customer)-[:HAS_PROCESS]->(:SalesProcess {id: $processId})
+        RETURN c.city
+    """)
+    String findCustomerCityForProcess(String processId);
+
+    @Query("""
+        MATCH (sr:SalesRepresentative)-[:MANAGES]->(:SalesProcess {id: $processId})
+        RETURN sr.id
+    """)
+    String findSalesRepresentativeIdForProcess(String processId);
+
+    @Query("""
+        MATCH (sr:SalesRepresentative)-[:MANAGES]->(:SalesProcess {id: $processId})
+        RETURN sr.name
+    """)
+    String findSalesRepresentativeNameForProcess(String processId);
+
+    @Query("""
         MATCH (:Customer {id: $customerId})-[r:HAS_PROCESS]->(:SalesProcess {id: $processId})
         DELETE r
     """)

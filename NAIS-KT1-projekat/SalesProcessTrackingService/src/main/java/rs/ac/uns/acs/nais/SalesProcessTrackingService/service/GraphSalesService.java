@@ -1,6 +1,10 @@
 package rs.ac.uns.acs.nais.SalesProcessTrackingService.service;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 import rs.ac.uns.acs.nais.SalesProcessTrackingService.model.Customer;
 import rs.ac.uns.acs.nais.SalesProcessTrackingService.model.SalesProcess;
 import rs.ac.uns.acs.nais.SalesProcessTrackingService.model.SalesRepresentative;
@@ -10,7 +14,10 @@ import rs.ac.uns.acs.nais.SalesProcessTrackingService.repository.SalesProcessRep
 import rs.ac.uns.acs.nais.SalesProcessTrackingService.repository.SalesRepresentativeRepository;
 import rs.ac.uns.acs.nais.SalesProcessTrackingService.repository.StageRepository;
 
+import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 @Service
@@ -20,17 +27,21 @@ public class GraphSalesService {
     private final StageRepository stageRepository;
     private final SalesRepresentativeRepository salesRepresentativeRepository;
     private final SalesProcessRepository salesProcessRepository;
+    private final RestTemplate restTemplate = new RestTemplate();
+    private final String salesAnalyticsUrl;
 
     public GraphSalesService(
             CustomerRepository customerRepository,
             StageRepository stageRepository,
             SalesRepresentativeRepository salesRepresentativeRepository,
-            SalesProcessRepository salesProcessRepository
+            SalesProcessRepository salesProcessRepository,
+            @Value("${sales-analytics.url:http://sales-analytics-service:8080/sales-analytics}") String salesAnalyticsUrl
     ) {
         this.customerRepository = customerRepository;
         this.stageRepository = stageRepository;
         this.salesRepresentativeRepository = salesRepresentativeRepository;
         this.salesProcessRepository = salesProcessRepository;
+        this.salesAnalyticsUrl = salesAnalyticsUrl;
     }
 
     // CUSTOMER CRUD
@@ -150,15 +161,95 @@ public class GraphSalesService {
     }
 
     public SalesProcess setCurrentStage(String processId, String stageId) {
-        getSalesProcessById(processId);
-        getStageById(stageId);
+        SalesProcess process = getSalesProcessById(processId);
+        Stage targetStage = getStageById(stageId);
 
+        String previousStageId = salesProcessRepository.findCurrentStageId(processId);
+        String previousStageName = salesProcessRepository.findCurrentStageName(processId);
+
+        SalesProcess updatedProcess = setCurrentStageOnly(processId, stageId);
+
+        try {
+            publishStageTransitionEvent(process, previousStageName, targetStage);
+        } catch (RuntimeException ex) {
+            compensateStageTransition(processId, previousStageId, ex);
+        }
+
+        return updatedProcess;
+    }
+
+    private SalesProcess setCurrentStageOnly(String processId, String stageId) {
         try {
             salesProcessRepository.removeCurrentStageRelation(processId);
         } catch (Exception ignored) {
         }
 
         return salesProcessRepository.setCurrentStage(processId, stageId);
+    }
+
+    private void publishStageTransitionEvent(SalesProcess process, String previousStageName, Stage targetStage) {
+        Map<String, Object> event = buildStageTransitionEvent(process, previousStageName, targetStage);
+
+        try {
+            ResponseEntity<Boolean> response = restTemplate.postForEntity(salesAnalyticsUrl, event, Boolean.class);
+            if (!Boolean.TRUE.equals(response.getBody())) {
+                throw new IllegalStateException("Sales analytics service rejected stage transition event");
+            }
+        } catch (RestClientException ex) {
+            throw new IllegalStateException("Sales analytics service is unavailable", ex);
+        }
+    }
+
+    private Map<String, Object> buildStageTransitionEvent(SalesProcess process, String previousStageName, Stage targetStage) {
+        Map<String, Object> event = new LinkedHashMap<>();
+        event.put("opportunityId", process.getId() + "-STAGE-" + System.currentTimeMillis());
+        event.put("customerId", valueOrDefault(salesProcessRepository.findCustomerIdForProcess(process.getId()), "UNKNOWN_CUSTOMER"));
+        event.put("customerSegment", "Pharma CRM");
+        event.put("salesRepId", valueOrDefault(salesProcessRepository.findSalesRepresentativeIdForProcess(process.getId()), "UNKNOWN_REP"));
+        event.put("salesRepName", valueOrDefault(salesProcessRepository.findSalesRepresentativeNameForProcess(process.getId()), "Unknown representative"));
+        event.put("region", valueOrDefault(salesProcessRepository.findCustomerCityForProcess(process.getId()), "Unknown region"));
+        event.put("productCategory", "Sales process");
+        event.put("stageFrom", valueOrDefault(previousStageName, "No previous stage"));
+        event.put("stageTo", targetStage.getName());
+        event.put("activityType", "Stage Transition");
+        event.put("outcome", "Stage changed");
+        event.put("dealValue", 10000.0);
+        event.put("probability", resolveProbability(targetStage.getName()));
+        event.put("stageDurationHours", 24.0);
+        event.put("activityDurationMinutes", 5.0);
+        event.put("timestamp", Instant.now().toString());
+        return event;
+    }
+
+    private Double resolveProbability(String stageName) {
+        if (stageName == null) {
+            return 0.10;
+        }
+        return switch (stageName) {
+            case "Lead Qualification", "Qualification" -> 0.20;
+            case "Needs Analysis", "Proposal" -> 0.40;
+            case "Offer Sent", "Negotiation" -> 0.65;
+            case "Closed Won" -> 1.00;
+            case "Closed Lost" -> 0.00;
+            default -> 0.50;
+        };
+    }
+
+    private String valueOrDefault(String value, String defaultValue) {
+        return value != null && !value.isBlank() ? value : defaultValue;
+    }
+
+    private void compensateStageTransition(String processId, String previousStageId, RuntimeException cause) {
+        try {
+            salesProcessRepository.removeCurrentStageRelation(processId);
+            if (previousStageId != null && !previousStageId.isBlank()) {
+                salesProcessRepository.setCurrentStage(processId, previousStageId);
+            }
+        } catch (Exception compensationException) {
+            cause.addSuppressed(compensationException);
+        }
+
+        throw new IllegalStateException("Stage transition was rolled back because analytics event could not be saved", cause);
     }
 
     public void removeCustomerProcessRelation(String customerId, String processId) {
