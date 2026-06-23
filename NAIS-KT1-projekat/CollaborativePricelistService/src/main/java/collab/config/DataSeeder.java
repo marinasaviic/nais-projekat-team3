@@ -1,6 +1,7 @@
 package collab.config;
 
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.neo4j.core.Neo4jClient;
@@ -38,6 +39,7 @@ public class DataSeeder {
         private static final List<String> COVERAGE_LEVELS = List.of("LOW", "MEDIUM", "HIGH");
 
     @Bean
+    @ConditionalOnProperty(name = "app.seed-data", havingValue = "true", matchIfMissing = true)
     CommandLineRunner seedData(
             Neo4jClient neo4jClient,
             TeamUserRepository teamUserRepository,

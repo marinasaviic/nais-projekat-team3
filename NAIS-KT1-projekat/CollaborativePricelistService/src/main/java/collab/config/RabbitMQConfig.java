@@ -1,15 +1,24 @@
 package collab.config;
 
+import collab.saga.dto.LifecycleEventWrittenReply;
+import collab.saga.dto.WriteLifecycleEventCommand;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.DefaultClassMapper;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.Map;
 
 @Configuration
 public class RabbitMQConfig {
@@ -43,9 +52,13 @@ public class RabbitMQConfig {
 
     @Bean
     public Jackson2JsonMessageConverter jackson2JsonMessageConverter() {
-        Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter();
+        Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter(rabbitObjectMapper());
         DefaultClassMapper classMapper = new DefaultClassMapper();
         classMapper.setTrustedPackages("collab.saga.dto");
+        classMapper.setIdClassMapping(Map.of(
+                "writeLifecycleEventCommand", WriteLifecycleEventCommand.class,
+                "lifecycleEventWrittenReply", LifecycleEventWrittenReply.class
+        ));
         converter.setClassMapper(classMapper);
         return converter;
     }
@@ -57,5 +70,24 @@ public class RabbitMQConfig {
         template.setMessageConverter(jackson2JsonMessageConverter);
         template.setReplyTimeout(10000);
         return template;
+    }
+
+    @Bean
+    public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(
+            ConnectionFactory connectionFactory,
+            Jackson2JsonMessageConverter jackson2JsonMessageConverter,
+            @Value("${spring.rabbitmq.listener.simple.auto-startup:true}") boolean autoStartup) {
+        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+        factory.setConnectionFactory(connectionFactory);
+        factory.setMessageConverter(jackson2JsonMessageConverter);
+        factory.setAutoStartup(autoStartup);
+        return factory;
+    }
+
+    private ObjectMapper rabbitObjectMapper() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        return objectMapper;
     }
 }

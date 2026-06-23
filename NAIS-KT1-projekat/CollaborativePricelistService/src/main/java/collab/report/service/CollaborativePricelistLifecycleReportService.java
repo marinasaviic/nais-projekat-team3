@@ -3,10 +3,8 @@ package collab.report.service;
 import collab.report.dto.ActivationPerformanceRow;
 import collab.report.dto.CollaborativePricelistLifecycleReportDto;
 import collab.report.dto.CollaborativePricelistReportFilters;
-import collab.report.dto.CollaborativePricelistSummaryProjection;
 import collab.report.dto.CollaborativePricelistSummaryRow;
 import collab.report.dto.LifecycleEventRow;
-import collab.repository.CollaborationRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
@@ -26,14 +24,14 @@ import java.util.stream.Collectors;
 @Service
 public class CollaborativePricelistLifecycleReportService {
 
-    private final CollaborationRepository collaborationRepository;
+    private final CollaborativePricelistReportNeo4jReader reportNeo4jReader;
     private final RestTemplate restTemplate;
     private final String timeseriesServiceUrl;
 
     public CollaborativePricelistLifecycleReportService(
-            CollaborationRepository collaborationRepository,
+            CollaborativePricelistReportNeo4jReader reportNeo4jReader,
             @Value("${app.timeseries-service-url:http://timeseries-service:8080}") String timeseriesServiceUrl) {
-        this.collaborationRepository = collaborationRepository;
+        this.reportNeo4jReader = reportNeo4jReader;
         this.timeseriesServiceUrl = timeseriesServiceUrl;
         this.restTemplate = new RestTemplate();
     }
@@ -64,14 +62,7 @@ public class CollaborativePricelistLifecycleReportService {
     }
 
     public List<CollaborativePricelistSummaryRow> loadPricelists(CollaborativePricelistReportFilters filters) {
-        return collaborationRepository.findPricelistReportRows(
-                        filters.getTeamId(),
-                        filters.getRegion(),
-                        filters.getStatus(),
-                        filters.getPricelistId())
-                .stream()
-                .map(this::toSummaryRow)
-                .collect(Collectors.toList());
+        return reportNeo4jReader.findPricelistReportRows(filters);
     }
 
     private List<LifecycleEventRow> loadLifecycleEvents(CollaborativePricelistReportFilters filters, List<String> warnings) {
@@ -168,19 +159,6 @@ public class CollaborativePricelistLifecycleReportService {
         row.setAverageActivationTimeMs(averageMs);
         row.setFastestActivationHours(fastestHours);
         row.setSlowestActivationHours(slowestHours);
-        return row;
-    }
-
-    private CollaborativePricelistSummaryRow toSummaryRow(CollaborativePricelistSummaryProjection projection) {
-        CollaborativePricelistSummaryRow row = new CollaborativePricelistSummaryRow();
-        row.setPricelistId(projection.getPricelistId());
-        row.setName(projection.getName());
-        row.setRegion(projection.getRegion());
-        row.setTeamId(projection.getTeamId());
-        row.setTeamName(projection.getTeamName());
-        row.setCurrentStatus(projection.getCurrentStatus());
-        row.setCreatorUserId(projection.getCreatorUserId());
-        row.setNumberOfCollaborators(projection.getNumberOfCollaborators());
         return row;
     }
 

@@ -4,8 +4,6 @@ import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.data.repository.query.Param;
 import collab.model.Team;
-import collab.model.Pricelist;
-import collab.report.dto.CollaborativePricelistSummaryProjection;
 
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -182,39 +180,6 @@ public interface CollaborationRepository extends Neo4jRepository<Team, String> {
         RETURN r.id AS regionId
     """)
     java.util.List<String> findRegionsForPricelist(String pricelistId);
-
-    @Query("""
-        MATCH (p:Pricelist)
-        OPTIONAL MATCH (t:Team)-[:WORKS_ON]->(p)
-        OPTIONAL MATCH (p)-[:FOR_REGION]->(r:Region)
-        OPTIONAL MATCH (u:TeamUser)-[:MEMBER_OF]->(t)
-        WITH p, t, r, collect(DISTINCT u) AS collaborators
-        OPTIONAL MATCH (creator:TeamUser)-[created:PERFORMED]->(p)
-        WITH p, t, r, collaborators,
-             [creatorId IN collect(DISTINCT CASE
-                WHEN created.actionType IN ['CREATE', 'CREATED']
-                THEN creator.id
-                ELSE null
-             END) WHERE creatorId IS NOT NULL] AS creators
-        WHERE ($pricelistId IS NULL OR $pricelistId = '' OR p.id = $pricelistId)
-          AND ($teamId IS NULL OR $teamId = '' OR t.id = $teamId)
-          AND ($region IS NULL OR $region = '' OR r.id = $region OR r.name = $region)
-          AND ($status IS NULL OR $status = '' OR p.status = $status)
-        RETURN p.id AS pricelistId,
-               p.name AS name,
-               coalesce(r.name, r.id, 'N/A') AS region,
-               coalesce(t.id, 'N/A') AS teamId,
-               coalesce(t.name, 'N/A') AS teamName,
-               coalesce(p.status, 'UNKNOWN') AS currentStatus,
-               coalesce(head(creators), 'N/A') AS creatorUserId,
-               size(collaborators) AS numberOfCollaborators
-        ORDER BY p.id
-    """)
-    List<CollaborativePricelistSummaryProjection> findPricelistReportRows(
-            @Param("teamId") String teamId,
-            @Param("region") String region,
-            @Param("status") String status,
-            @Param("pricelistId") String pricelistId);
 
     // ============================================================================
     // FZ 2.4.1: Praćenje aktivnosti timova - PERFORMANCE EVALUATION QUERIES
